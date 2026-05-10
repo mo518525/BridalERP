@@ -214,6 +214,7 @@ fn main() {
             commands::auth::update_user,
             commands::auth::delete_user,
             commands::auth::change_own_password,
+            commands::auth::update_own_profile,
             commands::auth::get_quran_verse,
             // Inventory
             commands::inventory::get_dresses,

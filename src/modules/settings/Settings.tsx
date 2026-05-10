@@ -4,8 +4,9 @@ import { motion } from 'framer-motion';
 import {
   Settings as SettingsIcon, Users, Moon, Sun, Globe, Plus, Pencil, Trash2,
   Shield, DollarSign, FlaskConical, Loader2, Database, Key, Store,
-  CheckCircle, AlertTriangle, Download,
+  CheckCircle, AlertTriangle, Download, ImageIcon, Timer,
 } from 'lucide-react';
+import type { Currency } from '../../store/uiStore';
 import { api } from '../../lib/api';
 import { seedDatabase } from '../../utils/seedDatabase';
 import { useUIStore } from '../../store/uiStore';
@@ -39,7 +40,7 @@ function GlassSection({ children }: { children: React.ReactNode }) {
 
 export function Settings() {
   const { t, i18n } = useTranslation();
-  const { theme, setTheme, language, setLanguage, addToast } = useUIStore();
+  const { theme, setTheme, language, setLanguage, addToast, defaultCurrency, setDefaultCurrency, autoLogoutMinutes, setAutoLogoutMinutes } = useUIStore();
   const { canViewSettings, canViewUsers } = usePermissions();
   const { user: currentUser } = useAuthStore();
 
@@ -130,6 +131,63 @@ export function Settings() {
         </GlassSection>
       </motion.div>
 
+      {/* Currency + Auto-logout */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06, type: 'spring', stiffness: 400, damping: 40 }}>
+        <GlassSection>
+          <div className="grid sm:grid-cols-2 gap-6">
+            {/* Default currency */}
+            <div>
+              <h2 className="font-semibold text-white/80 mb-1 flex items-center gap-2 text-sm">
+                <DollarSign size={15} className="text-gold-400" /> الوحدة الافتراضية للعرض
+              </h2>
+              <p className="text-xs text-white/40 mb-3" style={{ fontFamily: 'Cairo, sans-serif' }}>
+                العملة التي تظهر في لوحة التحكم والإحصاءات.
+              </p>
+              <div className="flex gap-2">
+                {(['USD', 'SYP', 'TRY'] as Currency[]).map(c => {
+                  const labels: Record<Currency, string> = { USD: '$ دولار', SYP: 'ل.س', TRY: '₺ ليرة' };
+                  return (
+                    <motion.button key={c} whileTap={{ scale: 0.96 }}
+                      onClick={() => setDefaultCurrency(c)}
+                      className="flex-1 py-2 rounded-xl text-xs font-bold transition-all border"
+                      style={defaultCurrency === c
+                        ? { background: 'linear-gradient(135deg, #c9a84c, #a8732e)', border: '1px solid rgba(201,168,76,0.3)', color: '#fff', fontFamily: 'Cairo, sans-serif' }
+                        : { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.55)', fontFamily: 'Cairo, sans-serif' }}>
+                      {labels[c]}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Auto logout */}
+            <div>
+              <h2 className="font-semibold text-white/80 mb-1 flex items-center gap-2 text-sm">
+                <Timer size={15} className="text-gold-400" /> تسجيل الخروج التلقائي
+              </h2>
+              <p className="text-xs text-white/40 mb-3" style={{ fontFamily: 'Cairo, sans-serif' }}>
+                تسجيل الخروج تلقائياً عند عدم النشاط. 0 = معطل.
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                {[0, 5, 10, 15, 30, 60].map(m => (
+                  <motion.button key={m} whileTap={{ scale: 0.96 }}
+                    onClick={() => setAutoLogoutMinutes(m)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold border"
+                    style={autoLogoutMinutes === m
+                      ? { background: 'linear-gradient(135deg, #c9a84c, #a8732e)', border: '1px solid rgba(201,168,76,0.3)', color: '#fff', fontFamily: 'Cairo, sans-serif' }
+                      : { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.55)', fontFamily: 'Cairo, sans-serif' }}>
+                    {m === 0 ? 'معطل' : `${m} د`}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </GlassSection>
+      </motion.div>
+
+      {/* Shop Logo */}
+      <ShopLogoSection />
+
       {/* Shop info */}
       <ShopInfoSection />
 
@@ -211,6 +269,82 @@ export function Settings() {
         loading={deleteLoading} title="حذف المستخدم" message={`حذف ${deletingUser?.name}؟`}
         danger confirmLabel={t('actions.delete')} />
     </div>
+  );
+}
+
+function ShopLogoSection() {
+  const { addToast } = useUIStore();
+  const [logo, setLogo]       = useState<string | null>(null);
+  const [saving, setSaving]   = useState(false);
+
+  useEffect(() => {
+    api.settings.get('shop_logo').then(v => { if (v) setLogo(v); }).catch(console.error);
+  }, []);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500_000) { addToast('error', 'الصورة كبيرة جداً (الحد 500KB)'); return; }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      setLogo(dataUrl);
+      setSaving(true);
+      try {
+        await api.settings.set('shop_logo', dataUrl);
+        addToast('success', 'تم حفظ الشعار');
+      } catch (err) { addToast('error', String(err)); }
+      finally { setSaving(false); }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeLogo = async () => {
+    setSaving(true);
+    try {
+      await api.settings.set('shop_logo', '');
+      setLogo(null);
+      addToast('success', 'تم حذف الشعار');
+    } catch (err) { addToast('error', String(err)); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.035, type: 'spring', stiffness: 400, damping: 40 }}>
+      <GlassSection>
+        <h2 className="font-semibold text-white/80 mb-1 flex items-center gap-2">
+          <ImageIcon size={17} className="text-gold-400" /> شعار المحل
+        </h2>
+        <p className="text-xs text-white/40 mb-4" style={{ fontFamily: 'Cairo, sans-serif' }}>
+          يظهر في شاشة تسجيل الدخول والفواتير. PNG أو JPG، بحد أقصى 500KB.
+        </p>
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)' }}>
+            {logo ? (
+              <img src={logo} alt="logo" className="w-full h-full object-contain" />
+            ) : (
+              <ImageIcon size={24} style={{ color: 'rgba(255,255,255,0.25)' }} />
+            )}
+          </div>
+          <div className="flex gap-2">
+            <label className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold cursor-pointer"
+              style={{ background: 'rgba(201,168,76,0.15)', color: '#c9a84c', border: '1px solid rgba(201,168,76,0.30)', fontFamily: 'Cairo, sans-serif' }}>
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <ImageIcon size={14} />}
+              {logo ? 'تغيير الشعار' : 'رفع شعار'}
+              <input type="file" accept="image/*" className="hidden" onChange={handleFile} />
+            </label>
+            {logo && (
+              <button onClick={removeLogo} disabled={saving}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
+                style={{ background: 'rgba(239,68,68,0.10)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)', fontFamily: 'Cairo, sans-serif' }}>
+                <Trash2 size={14} /> حذف
+              </button>
+            )}
+          </div>
+        </div>
+      </GlassSection>
+    </motion.div>
   );
 }
 

@@ -170,6 +170,47 @@ pub fn change_own_password(
 }
 
 #[tauri::command]
+pub fn update_own_profile(
+    state: tauri::State<'_, AppState>,
+    user_id: String,
+    name: String,
+    username: String,
+) -> Result<User, String> {
+    let name = name.trim().to_string();
+    let username = username.trim().to_lowercase();
+    if name.is_empty() || username.is_empty() {
+        return Err("الاسم واسم المستخدم مطلوبان".to_string());
+    }
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    crate::auth_guard::get_user_context(&db, &user_id)?;
+
+    let taken: i64 = db.query_row(
+        "SELECT COUNT(*) FROM users WHERE username = ?1 AND id != ?2",
+        params![username, user_id],
+        |r| r.get(0),
+    ).map_err(|e| e.to_string())?;
+    if taken > 0 {
+        return Err("اسم المستخدم مستخدم بالفعل".to_string());
+    }
+
+    let now = Utc::now().to_rfc3339();
+    db.execute(
+        "UPDATE users SET name = ?1, username = ?2, updated_at = ?3 WHERE id = ?4",
+        params![name, username, now, user_id],
+    ).map_err(|e| e.to_string())?;
+
+    db.query_row(
+        "SELECT id, name, username, role, active, created_at, updated_at FROM users WHERE id = ?1",
+        params![user_id],
+        |row| Ok(User {
+            id: row.get(0)?, name: row.get(1)?, username: row.get(2)?,
+            role: row.get(3)?, active: row.get(4)?,
+            created_at: row.get(5)?, updated_at: row.get(6)?,
+        }),
+    ).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn get_quran_verse(state: tauri::State<'_, AppState>) -> Result<(String, String), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let result = db.query_row(

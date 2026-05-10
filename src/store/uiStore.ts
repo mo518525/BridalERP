@@ -4,6 +4,7 @@ import i18n from '../i18n';
 
 type Theme = 'light' | 'dark';
 type Language = 'ar' | 'de';
+export type Currency = 'USD' | 'SYP' | 'TRY';
 
 interface Toast {
   id: string;
@@ -25,6 +26,9 @@ interface UIState {
   toasts: Toast[];
   exchangeRates: ExchangeRates;
   remindersRefreshKey: number;
+  defaultCurrency: Currency;
+  autoLogoutMinutes: number;
+  avatarColors: Record<string, string>;
   setTheme: (t: Theme) => void;
   setLanguage: (l: Language) => void;
   toggleSidebar: () => void;
@@ -33,6 +37,9 @@ interface UIState {
   removeToast: (id: string) => void;
   setExchangeRates: (r: ExchangeRates) => void;
   bumpReminders: () => void;
+  setDefaultCurrency: (c: Currency) => void;
+  setAutoLogoutMinutes: (m: number) => void;
+  setAvatarColor: (userId: string, color: string) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -44,6 +51,9 @@ export const useUIStore = create<UIState>()(
       hideFinancials: false,
       toasts: [],
       exchangeRates: { usd_to_syp: 14000, usd_to_try: 34, try_to_syp: 412 },
+      defaultCurrency: 'USD',
+      autoLogoutMinutes: 0,
+      avatarColors: {},
       setTheme: (theme) => {
         set({ theme });
         document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -65,7 +75,10 @@ export const useUIStore = create<UIState>()(
       setExchangeRates: (exchangeRates) => set({ exchangeRates }),
       remindersRefreshKey: 0,
       bumpReminders: () => set((s) => ({ remindersRefreshKey: s.remindersRefreshKey + 1 })),
+      setDefaultCurrency: (defaultCurrency) => set({ defaultCurrency }),
+      setAutoLogoutMinutes: (autoLogoutMinutes) => set({ autoLogoutMinutes }),
+      setAvatarColor: (userId, color) => set((s) => ({ avatarColors: { ...s.avatarColors, [userId]: color } })),
     }),
-    { name: 'bridal-ui', partialize: (s) => ({ theme: s.theme, language: s.language, exchangeRates: s.exchangeRates }) }
+    { name: 'bridal-ui', partialize: (s) => ({ theme: s.theme, language: s.language, exchangeRates: s.exchangeRates, defaultCurrency: s.defaultCurrency, autoLogoutMinutes: s.autoLogoutMinutes, avatarColors: s.avatarColors }) }
   )
 );

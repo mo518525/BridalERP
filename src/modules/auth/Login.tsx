@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, Gem, Lock, User } from 'lucide-react';
 import { api } from '../../lib/api';
@@ -16,6 +16,11 @@ export function Login() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [shopLogo, setShopLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.settings.get('shop_logo').then(v => { if (v) setShopLogo(v); }).catch(() => {});
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,8 +67,10 @@ export function Login() {
         <div className="bg-white/80 dark:bg-navy-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 dark:border-navy-700/50 p-8 animate-scale-in">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8 gap-3">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-gold">
-              <Gem size={28} className="text-white" />
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-gold overflow-hidden">
+              {shopLogo
+                ? <img src={shopLogo} alt="logo" className="w-full h-full object-contain" />
+                : <Gem size={28} className="text-white" />}
             </div>
             <div className="text-center">
               <h1 className="text-2xl font-bold text-navy-800 dark:text-cream-100">{t('appName')}</h1>

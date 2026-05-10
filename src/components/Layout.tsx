@@ -3,8 +3,10 @@ import { Sidebar } from './Sidebar';
 import { TopHeader } from './TopHeader';
 import { ToastContainer } from './Toast';
 import { BridalBackground } from './BridalBackground';
+import { useAutoLogout } from '../hooks/useAutoLogout';
 
 export function Layout() {
+  useAutoLogout();
   return (
     <>
       <BridalBackground />

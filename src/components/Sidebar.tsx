@@ -3,9 +3,9 @@ import { NavLink, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Home, BarChart3, CalendarDays,
-  Users2, Settings, LogOut, Menu, User, X,
-  ChevronRight,
+  Users2, Settings, LogOut, Menu, ChevronRight,
 } from 'lucide-react';
+import { ProfileModal } from './ProfileModal';
 import { cn } from '../utils/cn';
 import { useUIStore } from '../store/uiStore';
 import { useAuthStore } from '../store/authStore';
@@ -39,91 +39,6 @@ const labelV = {
   hidden: { opacity: 0, x: -8, width: 0 },
   show:   { opacity: 1, x: 0, width: 'auto', transition: { type: 'spring' as const, stiffness: 400, damping: 38, delay: 0.03 } },
 };
-
-// profile modal
-function ProfileModal({ onClose, isDark }: { onClose: () => void; isDark: boolean }) {
-  const { user } = useAuthStore();
-  const t = tok(isDark);
-  const ROLE_MAP: Record<string, string> = { owner: 'مالك', employee: 'موظف', cashier: 'كاشير' };
-  const initials = user?.name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() ?? '؟';
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-      onClick={onClose}>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-      />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.92, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.92, y: 12 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 34 }}
-        className="relative w-full max-w-sm rounded-2xl p-6"
-        style={glass(isDark)}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button onClick={onClose}
-          className="absolute top-4 end-4 p-1.5 rounded-lg transition-colors"
-          style={{ color: t.textMuted }}>
-          <X size={16} />
-        </button>
-
-        <div className="flex flex-col items-center gap-4">
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold"
-            style={{
-              background: 'linear-gradient(135deg, rgba(201,168,76,0.30), rgba(168,115,46,0.20))',
-              border: isDark ? '2px solid rgba(201,168,76,0.35)' : '2px solid rgba(201,168,76,0.40)',
-              color: isDark ? '#d4aa58' : '#a87830',
-              fontFamily: "'Playfair Display', serif",
-            }}>
-            {initials}
-          </div>
-
-          <div className="text-center">
-            <p className="text-lg font-bold" style={{ color: t.text1, fontFamily: 'Cairo, sans-serif' }}>
-              {user?.name}
-            </p>
-            <p className="text-sm mt-0.5" style={{ color: t.textMuted, fontFamily: 'Cairo, sans-serif' }}>
-              @{user?.username}
-            </p>
-          </div>
-
-          <div className="w-full flex justify-center">
-            <span className="px-4 py-1.5 rounded-full text-sm font-semibold"
-              style={{
-                background: isDark ? 'rgba(201,168,76,0.15)' : 'rgba(201,168,76,0.12)',
-                color: isDark ? '#d4aa58' : '#a87830',
-                border: isDark ? '1px solid rgba(201,168,76,0.28)' : '1px solid rgba(201,168,76,0.25)',
-                fontFamily: 'Cairo, sans-serif',
-              }}>
-              {ROLE_MAP[user?.role ?? ''] ?? user?.role}
-            </span>
-          </div>
-
-          <div className="w-full rounded-xl p-3 space-y-2" style={{
-            background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.44)',
-            border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
-          }}>
-            {[
-              { label: 'اسم المستخدم', value: user?.username },
-              { label: 'الحالة', value: user?.active ? 'نشط ✓' : 'غير نشط' },
-              { label: 'الدور', value: ROLE_MAP[user?.role ?? ''] ?? user?.role },
-            ].map(row => (
-              <div key={row.label} className="flex items-center justify-between text-sm">
-                <span style={{ color: t.textMuted, fontFamily: 'Cairo, sans-serif' }}>{row.label}</span>
-                <span style={{ color: t.text1, fontFamily: 'Cairo, sans-serif', fontWeight: 600 }}>{row.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
 
 // nav item
 interface NavItemProps {
@@ -171,7 +86,7 @@ function NavItem({ to, icon, label, exact, open, isDark }: NavItemProps) {
 
 // sidebar
 export function Sidebar() {
-  const { sidebarOpen, toggleSidebar, theme } = useUIStore();
+  const { sidebarOpen, toggleSidebar, theme, avatarColors } = useUIStore();
   const { logout, user } = useAuthStore();
   const { isOwner } = usePermissions();
   const isDark = theme === 'dark';
@@ -179,6 +94,7 @@ export function Sidebar() {
   const [showProfile, setShowProfile] = useState(false);
 
   const initials = user?.name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() ?? '؟';
+  const avatarColor = (user?.id ? avatarColors[user.id] : null) ?? '#c9a84c';
 
   return (
     <>
@@ -268,9 +184,9 @@ export function Sidebar() {
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
                 style={{
-                  background: isDark ? 'rgba(201,168,76,0.20)' : 'rgba(201,168,76,0.15)',
-                  color: isDark ? '#d4aa58' : '#a87830',
-                  border: isDark ? '1px solid rgba(201,168,76,0.30)' : '1px solid rgba(201,168,76,0.28)',
+                  background: `${avatarColor}28`,
+                  color: avatarColor,
+                  border: `1.5px solid ${avatarColor}55`,
                   fontFamily: "'Playfair Display', serif",
                 }}>
                 {initials}
@@ -320,7 +236,7 @@ export function Sidebar() {
 
       {/* Profile modal */}
       <AnimatePresence>
-        {showProfile && <ProfileModal onClose={() => setShowProfile(false)} isDark={isDark} />}
+        {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
       </AnimatePresence>
     </>
   );
