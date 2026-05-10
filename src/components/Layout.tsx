@@ -1,12 +1,26 @@
+import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopHeader } from './TopHeader';
 import { ToastContainer } from './Toast';
 import { BridalBackground } from './BridalBackground';
 import { useAutoLogout } from '../hooks/useAutoLogout';
+import { useUIStore } from '../store/uiStore';
+import { api } from '../lib/api';
 
 export function Layout() {
   useAutoLogout();
+  const { setShopName, setShopLogo } = useUIStore();
+
+  useEffect(() => {
+    Promise.all([
+      api.settings.get('shop_name'),
+      api.settings.get('shop_logo'),
+    ]).then(([name, logo]) => {
+      if (name) setShopName(name);
+      if (logo) setShopLogo(logo);
+    }).catch(console.error);
+  }, []);
   return (
     <>
       <BridalBackground />

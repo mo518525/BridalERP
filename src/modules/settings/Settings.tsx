@@ -271,7 +271,7 @@ export function Settings() {
 }
 
 function ShopLogoSection() {
-  const { addToast } = useUIStore();
+  const { addToast, setShopLogo: setStoreLogo } = useUIStore();
   const [logo, setLogo]       = useState<string | null>(null);
   const [saving, setSaving]   = useState(false);
 
@@ -290,7 +290,8 @@ function ShopLogoSection() {
       setSaving(true);
       try {
         await api.settings.set('shop_logo', dataUrl);
-        addToast('success', 'تم حفظ الشعار');
+        setStoreLogo(dataUrl);
+        addToast('success', 'تم حفظ الشعار ✓');
       } catch (err) { addToast('error', String(err)); }
       finally { setSaving(false); }
     };
@@ -302,6 +303,7 @@ function ShopLogoSection() {
     try {
       await api.settings.set('shop_logo', '');
       setLogo(null);
+      setStoreLogo('');
       addToast('success', 'تم حذف الشعار');
     } catch (err) { addToast('error', String(err)); }
     finally { setSaving(false); }
@@ -347,7 +349,7 @@ function ShopLogoSection() {
 }
 
 function ShopInfoSection() {
-  const { addToast } = useUIStore();
+  const { addToast, setShopName: setStoreName } = useUIStore();
   const [name, setName]       = useState('');
   const [phone, setPhone]     = useState('');
   const [city, setCity]       = useState('');
@@ -377,7 +379,8 @@ function ShopInfoSection() {
         api.settings.set('shop_city',    city.trim()),
         api.settings.set('shop_address', address.trim()),
       ]);
-      addToast('success', 'تم حفظ معلومات المحل');
+      setStoreName(name.trim());
+      addToast('success', 'تم حفظ معلومات المحل ✓');
     } catch (e) { addToast('error', String(e)); }
     finally { setSaving(false); }
   };

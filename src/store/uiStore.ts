@@ -29,6 +29,8 @@ interface UIState {
   defaultCurrency: Currency;
   autoLogoutMinutes: number;
   avatarColors: Record<string, string>;
+  shopName: string;
+  shopLogo: string;
   setTheme: (t: Theme) => void;
   setLanguage: (l: Language) => void;
   toggleSidebar: () => void;
@@ -40,6 +42,8 @@ interface UIState {
   setDefaultCurrency: (c: Currency) => void;
   setAutoLogoutMinutes: (m: number) => void;
   setAvatarColor: (userId: string, color: string) => void;
+  setShopName: (name: string) => void;
+  setShopLogo: (logo: string) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -54,6 +58,8 @@ export const useUIStore = create<UIState>()(
       defaultCurrency: 'USD',
       autoLogoutMinutes: 0,
       avatarColors: {},
+      shopName: '',
+      shopLogo: '',
       setTheme: (theme) => {
         set({ theme });
         document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -78,6 +84,8 @@ export const useUIStore = create<UIState>()(
       setDefaultCurrency: (defaultCurrency) => set({ defaultCurrency }),
       setAutoLogoutMinutes: (autoLogoutMinutes) => set({ autoLogoutMinutes }),
       setAvatarColor: (userId, color) => set((s) => ({ avatarColors: { ...s.avatarColors, [userId]: color } })),
+      setShopName: (shopName) => set({ shopName }),
+      setShopLogo: (shopLogo) => set({ shopLogo }),
     }),
     { name: 'bridal-ui', partialize: (s) => ({ theme: s.theme, language: s.language, exchangeRates: s.exchangeRates, defaultCurrency: s.defaultCurrency, autoLogoutMinutes: s.autoLogoutMinutes, avatarColors: s.avatarColors }) }
   )

@@ -86,7 +86,7 @@ function NavItem({ to, icon, label, exact, open, isDark }: NavItemProps) {
 
 // sidebar
 export function Sidebar() {
-  const { sidebarOpen, toggleSidebar, theme, avatarColors } = useUIStore();
+  const { sidebarOpen, toggleSidebar, theme, avatarColors, shopName, shopLogo } = useUIStore();
   const { logout, user } = useAuthStore();
   const { isOwner } = usePermissions();
   const isDark = theme === 'dark';
@@ -115,7 +115,7 @@ export function Sidebar() {
             <Link to="/" className={cn('flex items-center gap-3 min-w-0', !sidebarOpen && 'flex-col gap-2')}>
               <motion.div
                 whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
-                className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0"
+                className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0 overflow-hidden"
                 style={{
                   color: isDark ? t.text1 : t.gold,
                   background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.56)',
@@ -124,13 +124,15 @@ export function Sidebar() {
                     ? '0 6px 16px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.11)'
                     : '0 8px 16px rgba(124,124,124,0.08), inset 0 1px 0 rgba(255,255,255,0.88)',
                 }}>
-                <DressIcon size={17} />
+                {shopLogo
+                  ? <img src={shopLogo} alt="logo" className="w-full h-full object-contain" />
+                  : <DressIcon size={17} />}
               </motion.div>
               <AnimatePresence>
                 {sidebarOpen && (
                   <motion.div variants={labelV} initial="hidden" animate="show" exit="hidden" className="overflow-hidden min-w-0">
                     <p className="text-[15px] leading-tight truncate" style={{ color: t.text1, fontFamily: "'Playfair Display', serif" }}>
-                      Bridal
+                      {shopName || 'Bridal'}
                     </p>
                     <p className="text-[10px]" style={{ color: t.textMuted }}>Management</p>
                   </motion.div>

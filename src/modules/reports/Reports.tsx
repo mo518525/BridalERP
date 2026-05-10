@@ -375,7 +375,7 @@ function CustomersPreview({ data, isDark }: { data: Customer[]; isDark: boolean 
 }
 
 // Print / PDF
-async function exportToPdf(result: ReportResult, from: string, to: string, activeDef: ReportDef, toast: ToastFn) {
+async function exportToPdf(result: ReportResult, from: string, to: string, activeDef: ReportDef, toast: ToastFn, shopName: string, shopLogo: string) {
   const getTableHtml = (headers: string[], rows: (string | number | null | undefined)[][]) => `
     <table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
     <tbody>${rows.map((r, i) => `<tr class="${i%2?'alt':''}">${r.map(c => `<td>${c ?? '—'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
@@ -440,12 +440,12 @@ async function exportToPdf(result: ReportResult, from: string, to: string, activ
     @media print{body{padding:0}@page{size:A4 landscape;margin:3cm}}
   </style></head><body>
   <div class="header">
-    <div class="logo"><div class="logo-icon">👗</div><div><div class="company-name">Bridal ERP</div><div class="company-sub">نظام إدارة محل الأفراح</div></div></div>
+    <div class="logo">${shopLogo ? `<img src="${shopLogo}" style="width:44px;height:44px;object-fit:contain;border-radius:10px"/>` : '<div class="logo-icon">👗</div>'}<div><div class="company-name">${shopName || 'Bridal ERP'}</div><div class="company-sub">نظام إدارة محل الأفراح</div></div></div>
     <div class="report-title"><h1>${activeDef.label}</h1><p>${from} — ${to}</p></div>
     <div class="date-info"><div>تاريخ الإصدار: <strong>${new Date().toLocaleDateString('ar')}</strong></div></div>
   </div>
   ${body}
-  <div class="footer"><span>Bridal ERP — نظام إدارة محل الأفراح</span><span>${activeDef.label} · ${from} إلى ${to}</span></div>
+  <div class="footer"><span>${shopName || 'Bridal ERP'} — نظام إدارة محل الأفراح</span><span>${activeDef.label} · ${from} إلى ${to}</span></div>
   </body></html>`;
 
   const base = `${from}_${to}`;
@@ -460,7 +460,7 @@ async function exportToPdf(result: ReportResult, from: string, to: string, activ
 
 // Main component
 export function Reports() {
-  const { theme, addToast } = useUIStore();
+  const { theme, addToast, shopName, shopLogo } = useUIStore();
   const { canViewFinance, canExport } = usePermissions();
   const isDark = theme === 'dark';
 
@@ -539,7 +539,7 @@ export function Reports() {
               <Download size={15} style={{ color: '#4ade80' }} /> تصدير CSV
             </motion.button>
             <motion.button initial={{ opacity:0,y:-6 }} animate={{ opacity:1,y:0 }} transition={{ delay:0.05 }}
-              onClick={() => exportToPdf(result, dateFrom, dateTo, activeDef, addToast)}
+              onClick={() => exportToPdf(result, dateFrom, dateTo, activeDef, addToast, shopName, shopLogo)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
               style={{ fontFamily:'Cairo,sans-serif', background:'rgba(201,168,76,0.15)', border:`1px solid ${gold}55`, color: gold }}>
               <FileText size={15} /> تصدير PDF
@@ -673,7 +673,7 @@ export function Reports() {
                     style={{ fontFamily:'Cairo,sans-serif', color:'#4ade80', background:'rgba(74,222,128,0.10)', border:'1px solid rgba(74,222,128,0.25)' }}>
                     <Download size={12} /> CSV
                   </button>
-                  <button onClick={() => exportToPdf(result, dateFrom, dateTo, activeDef, addToast)}
+                  <button onClick={() => exportToPdf(result, dateFrom, dateTo, activeDef, addToast, shopName, shopLogo)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
                     style={{ fontFamily:'Cairo,sans-serif', color: gold, background:'rgba(201,168,76,0.10)', border:`1px solid ${gold}33` }}>
                     <FileText size={12} /> PDF
