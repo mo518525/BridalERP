@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Megaphone, CheckSquare, Plus, Trash2, Check,
@@ -11,6 +10,8 @@ import { tok } from '../../utils/themeTokens';
 import { api } from '../../lib/api';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import type { Announcement, EmployeeTodo, Transaction, Dress } from '../../types';
+import { SaleForm } from '../sales/SaleForm';
+import { RentalForm } from '../rentals/RentalForm';
 
 function glass(isDark: boolean, extra?: React.CSSProperties): React.CSSProperties {
   return {
@@ -46,7 +47,8 @@ export function EmployeeDashboard() {
   const { user: me } = useAuthStore();
   const isDark = theme === 'dark';
   const t = tok(isDark);
-  const navigate = useNavigate();
+  const [showSaleForm, setShowSaleForm]     = useState(false);
+  const [showRentalForm, setShowRentalForm] = useState(false);
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [todos, setTodos]                 = useState<EmployeeTodo[]>([]);
@@ -140,12 +142,12 @@ export function EmployeeDashboard() {
         </div>
         {/* Quick action buttons */}
         <div className="flex gap-2">
-          <button onClick={() => navigate('/sales')}
+          <button onClick={() => setShowSaleForm(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-[14px] text-sm font-semibold"
             style={{ fontFamily: 'Cairo, sans-serif', background: 'rgba(106,173,106,0.15)', color: '#6aad6a', border: '1px solid rgba(106,173,106,0.30)' }}>
             <ShoppingBag size={14} /> بيع سريع
           </button>
-          <button onClick={() => navigate('/rentals')}
+          <button onClick={() => setShowRentalForm(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-[14px] text-sm font-semibold"
             style={{ fontFamily: 'Cairo, sans-serif', background: 'rgba(201,168,76,0.15)', color: t.gold, border: '1px solid rgba(201,168,76,0.30)' }}>
             <RotateCcw size={14} /> إيجار سريع
@@ -318,6 +320,27 @@ export function EmployeeDashboard() {
           </motion.div>
         </div>
       </div>
+
+      <SaleForm
+        open={showSaleForm}
+        onClose={() => setShowSaleForm(false)}
+        onSaved={() => {
+          setShowSaleForm(false);
+          api.transactions.getAll()
+            .then(all => setTxns(all.filter(tx => tx.employee_id === me?.id)))
+            .catch(console.error);
+        }}
+      />
+      <RentalForm
+        open={showRentalForm}
+        onClose={() => setShowRentalForm(false)}
+        onSaved={() => {
+          setShowRentalForm(false);
+          api.transactions.getAll()
+            .then(all => setTxns(all.filter(tx => tx.employee_id === me?.id)))
+            .catch(console.error);
+        }}
+      />
     </motion.div>
   );
 }
