@@ -11,3 +11,4 @@ pub mod deliveries;
 pub mod calendar;
 pub mod announcements;
 pub mod todos;
+pub mod settings;

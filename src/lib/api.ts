@@ -200,6 +200,15 @@ export const api = {
       invoke<void>('delete_todo', { id, userId: getCurrentUserId() }),
   },
 
+  settings: {
+    get: (key: string) => invoke<string | null>('get_setting', { key }),
+    set: (key: string, value: string) =>
+      invoke<void>('set_setting', { userId: getCurrentUserId(), key, value }),
+    backup: () => invoke<string>('backup_database', { userId: getCurrentUserId() }),
+    activateLicense: (key: string) =>
+      invoke<void>('activate_license', { userId: getCurrentUserId(), key }),
+  },
+
   exports: {
     saveToDownloads: (filename: string, content: string) =>
       invoke<string>('save_to_downloads', { filename, content }),

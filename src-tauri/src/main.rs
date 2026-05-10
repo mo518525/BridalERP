@@ -277,6 +277,11 @@ fn main() {
             commands::todos::create_todo,
             commands::todos::toggle_todo,
             commands::todos::delete_todo,
+            // App settings
+            commands::settings::get_setting,
+            commands::settings::set_setting,
+            commands::settings::backup_database,
+            commands::settings::activate_license,
             // Exports
             save_to_downloads,
             save_pdf_to_downloads,

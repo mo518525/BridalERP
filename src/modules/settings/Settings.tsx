@@ -1,7 +1,11 @@
 ﻿import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Users, Moon, Sun, Globe, Plus, Pencil, Trash2, Shield, DollarSign, FlaskConical, Loader2 } from 'lucide-react';
+import {
+  Settings as SettingsIcon, Users, Moon, Sun, Globe, Plus, Pencil, Trash2,
+  Shield, DollarSign, FlaskConical, Loader2, Database, Key, Store,
+  CheckCircle, AlertTriangle, Download,
+} from 'lucide-react';
 import { api } from '../../lib/api';
 import { seedDatabase } from '../../utils/seedDatabase';
 import { useUIStore } from '../../store/uiStore';
@@ -126,6 +130,15 @@ export function Settings() {
         </GlassSection>
       </motion.div>
 
+      {/* Shop info */}
+      <ShopInfoSection />
+
+      {/* Backup */}
+      <BackupSection />
+
+      {/* License */}
+      <LicenseSection />
+
       {/* Seed */}
       <SeedSection />
 
@@ -198,6 +211,251 @@ export function Settings() {
         loading={deleteLoading} title="حذف المستخدم" message={`حذف ${deletingUser?.name}؟`}
         danger confirmLabel={t('actions.delete')} />
     </div>
+  );
+}
+
+function ShopInfoSection() {
+  const { addToast } = useUIStore();
+  const [name, setName]       = useState('');
+  const [phone, setPhone]     = useState('');
+  const [city, setCity]       = useState('');
+  const [address, setAddress] = useState('');
+  const [saving, setSaving]   = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      api.settings.get('shop_name'),
+      api.settings.get('shop_phone'),
+      api.settings.get('shop_city'),
+      api.settings.get('shop_address'),
+    ]).then(([n, p, c, a]) => {
+      if (n) setName(n);
+      if (p) setPhone(p);
+      if (c) setCity(c);
+      if (a) setAddress(a);
+    }).catch(console.error);
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await Promise.all([
+        api.settings.set('shop_name',    name.trim()),
+        api.settings.set('shop_phone',   phone.trim()),
+        api.settings.set('shop_city',    city.trim()),
+        api.settings.set('shop_address', address.trim()),
+      ]);
+      addToast('success', 'تم حفظ معلومات المحل');
+    } catch (e) { addToast('error', String(e)); }
+    finally { setSaving(false); }
+  };
+
+  const inputCls: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 12,
+    color: 'rgba(255,255,255,0.88)',
+    fontFamily: 'Cairo, sans-serif',
+    fontSize: '0.875rem',
+    outline: 'none',
+    width: '100%',
+    height: 40,
+    padding: '0 12px',
+    colorScheme: 'dark',
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03, type: 'spring', stiffness: 400, damping: 40 }}>
+      <GlassSection>
+        <h2 className="font-semibold text-white/80 mb-1 flex items-center gap-2">
+          <Store size={17} className="text-gold-400" /> معلومات المحل
+        </h2>
+        <p className="text-xs text-white/40 mb-4" style={{ fontFamily: 'Cairo, sans-serif' }}>
+          الاسم والعنوان والهاتف — تظهر على الفواتير والتقارير المطبوعة.
+        </p>
+        <div className="grid sm:grid-cols-2 gap-3 mb-4">
+          {[
+            { label: 'اسم المحل',    value: name,    set: setName },
+            { label: 'رقم الهاتف',   value: phone,   set: setPhone },
+            { label: 'المدينة',      value: city,    set: setCity },
+            { label: 'العنوان',      value: address, set: setAddress },
+          ].map(({ label, value, set }) => (
+            <div key={label}>
+              <label className="block text-xs text-white/45 mb-1.5" style={{ fontFamily: 'Cairo, sans-serif' }}>{label}</label>
+              <input value={value} onChange={e => set(e.target.value)} style={inputCls} />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end">
+          <motion.button whileTap={{ scale: 0.97 }} onClick={save} disabled={saving}
+            className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #c9a84c, #a8732e)', color: '#fff', fontFamily: 'Cairo, sans-serif' }}>
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Store size={14} />}
+            حفظ معلومات المحل
+          </motion.button>
+        </div>
+      </GlassSection>
+    </motion.div>
+  );
+}
+
+function BackupSection() {
+  const { addToast } = useUIStore();
+  const [loading, setLoading]       = useState(false);
+  const [lastBackup, setLastBackup] = useState<string | null>(null);
+  const [savedPath, setSavedPath]   = useState('');
+
+  useEffect(() => {
+    api.settings.get('last_backup_date').then(v => setLastBackup(v ?? null)).catch(console.error);
+  }, []);
+
+  const daysSinceBackup = (() => {
+    if (!lastBackup) return null;
+    const diff = Date.now() - new Date(lastBackup).getTime();
+    return Math.floor(diff / 86_400_000);
+  })();
+
+  const needsBackup = daysSinceBackup === null || daysSinceBackup >= 90;
+
+  const doBackup = async () => {
+    setLoading(true);
+    setSavedPath('');
+    try {
+      const path = await api.settings.backup();
+      setSavedPath(path);
+      setLastBackup(new Date().toISOString().slice(0, 10));
+      addToast('success', 'تم حفظ النسخة الاحتياطية بنجاح');
+    } catch (e) { addToast('error', String(e)); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04, type: 'spring', stiffness: 400, damping: 40 }}>
+      <GlassSection>
+        <h2 className="font-semibold text-white/80 mb-1 flex items-center gap-2">
+          <Database size={17} className="text-gold-400" /> النسخ الاحتياطي
+        </h2>
+        <p className="text-xs text-white/40 mb-4" style={{ fontFamily: 'Cairo, sans-serif' }}>
+          يُنصح بعمل نسخة احتياطية من قاعدة البيانات كل 3 أشهر على الأقل. يتم الحفظ في مجلد التنزيلات.
+        </p>
+
+        {needsBackup && (
+          <div className="flex items-start gap-3 p-3 rounded-xl mb-4"
+            style={{ background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.25)' }}>
+            <AlertTriangle size={15} className="text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-red-300" style={{ fontFamily: 'Cairo, sans-serif' }}>
+              {lastBackup === null
+                ? 'لم يتم عمل أي نسخة احتياطية من قبل. قم بالنسخ الاحتياطي الآن لحماية بياناتك.'
+                : `آخر نسخة احتياطية كانت منذ ${daysSinceBackup} يوم — حان وقت النسخ الاحتياطي.`}
+            </p>
+          </div>
+        )}
+
+        {!needsBackup && lastBackup && (
+          <div className="flex items-center gap-2 mb-4 text-xs text-emerald-400" style={{ fontFamily: 'Cairo, sans-serif' }}>
+            <CheckCircle size={14} />
+            آخر نسخة احتياطية: {lastBackup} (منذ {daysSinceBackup} يوم)
+          </div>
+        )}
+
+        {savedPath && (
+          <p className="text-xs mb-3 text-emerald-400 break-all" style={{ fontFamily: 'Cairo, sans-serif' }}>
+            ✓ تم الحفظ في: {savedPath}
+          </p>
+        )}
+
+        <motion.button whileTap={{ scale: 0.97 }} onClick={doBackup} disabled={loading}
+          className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold disabled:opacity-50"
+          style={{ background: needsBackup ? 'rgba(248,113,113,0.15)' : 'rgba(201,168,76,0.15)', color: needsBackup ? '#f87171' : '#c9a84c', border: `1px solid ${needsBackup ? 'rgba(248,113,113,0.30)' : 'rgba(201,168,76,0.30)'}`, fontFamily: 'Cairo, sans-serif' }}>
+          {loading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+          {loading ? 'جارٍ الحفظ...' : 'نسخ احتياطي الآن'}
+        </motion.button>
+      </GlassSection>
+    </motion.div>
+  );
+}
+
+function LicenseSection() {
+  const { addToast } = useUIStore();
+  const [currentKey, setCurrentKey]   = useState('');
+  const [status, setStatus]           = useState<string | null>(null);
+  const [inputKey, setInputKey]       = useState('');
+  const [activating, setActivating]   = useState(false);
+  const [error, setError]             = useState('');
+
+  useEffect(() => {
+    Promise.all([
+      api.settings.get('license_key'),
+      api.settings.get('license_status'),
+    ]).then(([k, s]) => {
+      if (k) setCurrentKey(k);
+      if (s) setStatus(s);
+    }).catch(console.error);
+  }, []);
+
+  const activate = async () => {
+    if (!inputKey.trim()) return;
+    setActivating(true);
+    setError('');
+    try {
+      await api.settings.activateLicense(inputKey.trim());
+      const k = inputKey.trim().toUpperCase();
+      setCurrentKey(k);
+      setStatus('active');
+      setInputKey('');
+      addToast('success', 'تم تفعيل الترخيص بنجاح');
+    } catch (e) { setError(String(e)); }
+    finally { setActivating(false); }
+  };
+
+  const isActive = status === 'active';
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, type: 'spring', stiffness: 400, damping: 40 }}>
+      <GlassSection>
+        <h2 className="font-semibold text-white/80 mb-1 flex items-center gap-2">
+          <Key size={17} className="text-gold-400" /> ترخيص البرنامج
+        </h2>
+        <p className="text-xs text-white/40 mb-4" style={{ fontFamily: 'Cairo, sans-serif' }}>
+          أدخل مفتاح الترخيص الخاص بك لتفعيل البرنامج. الصيغة: BRIDAL-XXXX-XXXX-XXXX
+        </p>
+
+        {currentKey && (
+          <div className="flex items-center gap-3 p-3 rounded-xl mb-4"
+            style={{ background: isActive ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.04)', border: `1px solid ${isActive ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.10)'}` }}>
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-emerald-400' : 'bg-white/20'}`} />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-mono text-white/70 truncate">{currentKey}</p>
+            </div>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: isActive ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)', color: isActive ? '#34d399' : 'rgba(255,255,255,0.35)', fontFamily: 'Cairo, sans-serif' }}>
+              {isActive ? 'نشط' : 'غير نشط'}
+            </span>
+          </div>
+        )}
+
+        {error && (
+          <p className="text-xs text-red-400 mb-3" style={{ fontFamily: 'Cairo, sans-serif' }}>{error}</p>
+        )}
+
+        <div className="flex gap-2">
+          <input
+            value={inputKey}
+            onChange={e => { setInputKey(e.target.value); setError(''); }}
+            onKeyDown={e => e.key === 'Enter' && activate()}
+            placeholder="BRIDAL-XXXX-XXXX-XXXX"
+            className="flex-1 h-10 px-3 rounded-xl font-mono text-sm"
+            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.88)', outline: 'none', colorScheme: 'dark' }}
+          />
+          <motion.button whileTap={{ scale: 0.97 }} onClick={activate} disabled={activating || !inputKey.trim()}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold disabled:opacity-40"
+            style={{ background: 'linear-gradient(135deg, #c9a84c, #a8732e)', color: '#fff', fontFamily: 'Cairo, sans-serif', whiteSpace: 'nowrap' }}>
+            {activating ? <Loader2 size={13} className="animate-spin" /> : <Key size={13} />}
+            تفعيل
+          </motion.button>
+        </div>
+      </GlassSection>
+    </motion.div>
   );
 }
 
