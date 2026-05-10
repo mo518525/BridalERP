@@ -182,30 +182,26 @@ export function Sidebar() {
               title={!sidebarOpen ? user?.name : undefined}
             >
               <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-                style={{
+                className="w-7 h-7 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-[11px] font-bold"
+                style={shopLogo ? { border: `1.5px solid ${avatarColor}55` } : {
                   background: `${avatarColor}28`,
                   color: avatarColor,
                   border: `1.5px solid ${avatarColor}55`,
                   fontFamily: "'Playfair Display', serif",
                 }}>
-                {initials}
+                {shopLogo
+                  ? <img src={shopLogo} alt="shop" className="w-full h-full object-contain" />
+                  : initials}
               </div>
               <AnimatePresence>
                 {sidebarOpen && (
                   <motion.div variants={labelV} initial="hidden" animate="show" exit="hidden" className="flex-1 min-w-0 overflow-hidden text-start">
                     <p className="truncate text-[13px]" style={{ color: t.text1, fontWeight: isDark ? 600 : 800, fontFamily: 'Cairo, sans-serif' }}>
+                      {shopName || user?.name}
+                    </p>
+                    <p className="text-[10px] truncate mt-0.5" style={{ color: t.textMuted, fontFamily: 'Cairo, sans-serif' }}>
                       {user?.name}
                     </p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      {shopLogo && (
-                        <img src={shopLogo} alt="" className="w-3.5 h-3.5 rounded object-contain flex-shrink-0"
-                          style={{ opacity: 0.75 }} />
-                      )}
-                      <p className="text-[10px] truncate" style={{ color: t.textMuted, fontFamily: 'Cairo, sans-serif' }}>
-                        {shopName || (({ owner: 'مالك', employee: 'موظف', cashier: 'كاشير' } as Record<string, string>)[user?.role ?? ''] ?? user?.role)}
-                      </p>
-                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

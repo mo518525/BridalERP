@@ -446,10 +446,10 @@ async function exportToPdf(result: ReportResult, from: string, to: string, activ
     .footer-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
     .footer-shop{display:flex;align-items:center;gap:10px}
     .footer-logo{width:32px;height:32px;object-fit:contain;border-radius:6px}
-    .footer-shop-name{font-size:12px;font-weight:800;color:#1a0f04}
-    .footer-contact{display:flex;flex-direction:column;gap:3px;margin-top:4px}
-    .footer-contact span{font-size:9px;color:#7a5c2e}
-    .footer-report{text-align:left;font-size:9px;color:#a08050;padding-top:4px}
+    .footer-shop-name{font-size:13px;font-weight:900;color:#1a0f04;letter-spacing:0.01em}
+    .footer-contact{display:flex;flex-direction:column;gap:4px;margin-top:5px}
+    .footer-contact span{font-size:10px;color:#5a3e20;font-weight:600}
+    .footer-report{text-align:left;font-size:10px;color:#7a5c2e;padding-top:4px;font-weight:600}
     @media print{body{padding:0}@page{size:A4 landscape;margin:3cm}}
   </style></head><body>
   <div class="header">
