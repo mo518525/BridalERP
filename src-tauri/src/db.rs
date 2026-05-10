@@ -47,7 +47,7 @@ pub fn init_db(path: &Path) -> Result<Connection> {
     let _ = conn.execute_batch("
         CREATE TABLE IF NOT EXISTS employee_todos (
             id          TEXT PRIMARY KEY,
-            user_id     TEXT NOT NULL,
+            user_id     TEXT NOT NULL REFERENCES users(id),
             text        TEXT NOT NULL,
             done        INTEGER NOT NULL DEFAULT 0,
             created_at  TEXT NOT NULL
