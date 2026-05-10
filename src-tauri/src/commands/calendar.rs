@@ -84,11 +84,15 @@ pub fn get_calendar_events(
         .collect();
     events.extend(rental_ends);
 
-    // Pending reminders in range
+    // Pending reminders in range (join transactions → customers + dresses for full details)
     let mut stmt3 = db.prepare(
-        "SELECT id, reminder_type, title, date, priority, customer_name
-         FROM reminders
-         WHERE status = 'pending' AND date BETWEEN ?1 AND ?2",
+        "SELECT r.id, r.reminder_type, r.title, r.date, r.priority,
+                COALESCE(c.name, r.customer_name), d.code
+         FROM reminders r
+         LEFT JOIN transactions t ON t.id = r.transaction_id
+         LEFT JOIN customers c ON c.id = t.customer_id
+         LEFT JOIN dresses d ON d.id = t.dress_id
+         WHERE r.status = 'pending' AND r.date BETWEEN ?1 AND ?2",
     ).map_err(|e| e.to_string())?;
 
     let reminder_events: Vec<CalendarEvent> = stmt3
@@ -100,18 +104,19 @@ pub fn get_calendar_events(
                 row.get::<_, String>(3)?,
                 row.get::<_, String>(4)?,
                 row.get::<_, Option<String>>(5)?,
+                row.get::<_, Option<String>>(6)?,
             ))
         })
         .map_err(|e| e.to_string())?
         .filter_map(|r| r.ok())
-        .map(|(id, rtype, title, date, priority, customer)| CalendarEvent {
+        .map(|(id, rtype, title, date, priority, customer, dress)| CalendarEvent {
             id: id.clone(),
             event_type: rtype,
             title,
             date,
             entity_id: id,
             customer_name: customer,
-            dress_code: None,
+            dress_code: dress,
             priority: Some(priority),
         })
         .collect();

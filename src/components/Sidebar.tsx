@@ -241,7 +241,7 @@ export function Sidebar() {
             <NavItem to="/"          icon={<Home size={16} />}          label="الرئيسية"     exact open={sidebarOpen} isDark={isDark} />
             <NavItem to="/dashboard" icon={<LayoutDashboard size={16} />} label="لوحة التحكم" open={sidebarOpen} isDark={isDark} />
             {isOwner && <NavItem to="/reports"   icon={<BarChart3 size={16} />}    label="التقارير"     open={sidebarOpen} isDark={isDark} />}
-            <NavItem to="/calendar"  icon={<CalendarDays size={16} />}  label="الكاليندر"    open={sidebarOpen} isDark={isDark} />
+            <NavItem to="/calendar"  icon={<CalendarDays size={16} />}  label="التقويم"      open={sidebarOpen} isDark={isDark} />
 
             {/* Divider */}
             <div className="my-2 mx-2" style={{ height: 1, background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }} />

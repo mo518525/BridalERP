@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronLeft, ChevronRight, CalendarDays, ShoppingBag, RotateCcw,
-  Wallet, Sparkles, Bell, CheckCircle, Trash2, AlertTriangle, Plus,
+  ChevronLeft, ChevronRight, CalendarDays, RotateCcw,
+  Wallet, Sparkles, CheckCircle, Trash2, AlertTriangle, Plus,
+  User, Tag, FileText, X, Truck,
 } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -12,8 +13,7 @@ import { ConfirmDialog, Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 import { Input, Select, TextArea } from '../../components/Input';
 import { formatDate, isOverdue, todayISO } from '../../utils/formatters';
-import type { Reminder } from '../../types';
-import { cn } from '../../utils/cn';
+import type { Reminder, CalendarEvent } from '../../types';
 
 function glassPanel(isDark: boolean, extra?: React.CSSProperties): React.CSSProperties {
   return {
@@ -28,33 +28,26 @@ function glassPanel(isDark: boolean, extra?: React.CSSProperties): React.CSSProp
   };
 }
 
-type EventType = 'rental' | 'return' | 'payment' | 'cleaning';
+type DisplayType = 'rental_start' | 'rental_end' | 'payment' | 'cleaning' | 'delivery';
 
-interface CalEvent { day: number; title: string; type: EventType; }
-
-const EVENT_COLORS: Record<EventType, { bg: string; text: string; icon: React.ReactNode }> = {
-  rental:   { bg: 'rgba(201,168,76,0.18)',  text: '#c9a84c', icon: <CalendarDays size={10} /> },
-  return:   { bg: 'rgba(120,180,120,0.18)', text: '#6aad6a', icon: <RotateCcw size={10} /> },
-  payment:  { bg: 'rgba(180,120,200,0.18)', text: '#b07ac8', icon: <Wallet size={10} /> },
-  cleaning: { bg: 'rgba(100,160,220,0.18)', text: '#60a4dc', icon: <Sparkles size={10} /> },
+const EVENT_COLORS: Record<DisplayType, { bg: string; text: string; icon: React.ReactNode; label: string }> = {
+  rental_start: { bg: 'rgba(201,168,76,0.18)',  text: '#c9a84c', icon: <CalendarDays size={10} />, label: 'تأجير' },
+  rental_end:   { bg: 'rgba(120,180,120,0.18)', text: '#6aad6a', icon: <RotateCcw size={10} />,   label: 'إرجاع' },
+  payment:      { bg: 'rgba(180,120,200,0.18)', text: '#b07ac8', icon: <Wallet size={10} />,       label: 'دفعة' },
+  cleaning:     { bg: 'rgba(100,160,220,0.18)', text: '#60a4dc', icon: <Sparkles size={10} />,    label: 'تنظيف' },
+  delivery:     { bg: 'rgba(240,160,80,0.18)',  text: '#e09a52', icon: <Truck size={10} />,        label: 'توصيل' },
 };
 
-const SAMPLE_EVENTS: CalEvent[] = [
-  { day: 3,  title: 'تأجير فستان — سارة',   type: 'rental' },
-  { day: 3,  title: 'دفعة متبقية',           type: 'payment' },
-  { day: 7,  title: 'إرجاع فستان BR-0153',  type: 'return' },
-  { day: 10, title: 'تنظيف 3 فساتين',       type: 'cleaning' },
-  { day: 12, title: 'تأجير فستان — منى',    type: 'rental' },
-  { day: 14, title: 'إرجاع فستان BR-0102',  type: 'return' },
-  { day: 17, title: 'بيع فستان — ليلى',     type: 'rental' },
-  { day: 20, title: 'تنظيف فستان BR-0099',  type: 'cleaning' },
-  { day: 22, title: 'تأجير فستان — نور',    type: 'rental' },
-  { day: 25, title: 'إرجاع فستان BR-0178',  type: 'return' },
-  { day: 27, title: 'دفعة أولى',            type: 'payment' },
-];
+function resolveType(raw: string): DisplayType {
+  if (raw in EVENT_COLORS) return raw as DisplayType;
+  if (raw === 'return') return 'rental_end';
+  if (raw === 'rental') return 'rental_start';
+  if (raw === 'pickup') return 'rental_start';
+  return 'cleaning';
+}
 
-const DAYS_AR    = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-const MONTHS_AR  = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const DAYS_AR   = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 
 const PRIORITY_OPTIONS = [
   { value: 'low', label: 'منخفض' }, { value: 'normal', label: 'عادي' },
@@ -64,12 +57,10 @@ const TYPE_OPTIONS = [
   { value: 'pickup', label: 'استلام' }, { value: 'return', label: 'إرجاع' },
   { value: 'payment', label: 'دفع' }, { value: 'cleaning', label: 'تنظيف' },
 ];
-
 const PRIORITY_COLOR: Record<string, string> = {
   urgent: '#e05252', high: '#e09a52', normal: '#c9a84c', low: 'rgba(150,150,150,0.7)',
 };
 
-// Add Reminder Form (inline)
 function AddReminderForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const { addToast } = useUIStore();
   const [form, setForm] = useState({ reminder_type: 'pickup', title: '', description: '', date: todayISO(), priority: 'normal' });
@@ -106,7 +97,6 @@ function AddReminderForm({ onClose, onSaved }: { onClose: () => void; onSaved: (
   );
 }
 
-// Main page
 export function CalendarPage() {
   const { theme, language } = useUIStore();
   const { canDelete } = usePermissions();
@@ -114,27 +104,43 @@ export function CalendarPage() {
   const t = tok(isDark);
 
   const today = new Date();
-  const [year, setYear]     = useState(today.getFullYear());
-  const [month, setMonth]   = useState(today.getMonth());
+  const [year, setYear]   = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
   const [selected, setSelected] = useState<number | null>(today.getDate());
 
-  const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [tab, setTab] = useState<'events' | 'reminders'>('reminders');
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [deleting, setDeleting] = useState<Reminder | null>(null);
+  const [calEvents, setCalEvents]       = useState<CalendarEvent[]>([]);
+  const [reminders, setReminders]       = useState<Reminder[]>([]);
+  const [tab, setTab]                   = useState<'events' | 'reminders'>('reminders');
+  const [showAddForm, setShowAddForm]   = useState(false);
+  const [detailDay, setDetailDay]       = useState<number | null>(null);
+  const [detailReminder, setDetailReminder] = useState<Reminder | null>(null);
+  const [summaryType, setSummaryType]   = useState<DisplayType | null>(null);
+  const [deleting, setDeleting]         = useState<Reminder | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const loadReminders = () => {
-    api.reminders.getAll().then(setReminders).catch(console.error);
+  const loadReminders = () => api.reminders.getAll().then(setReminders).catch(console.error);
+
+  const loadCalEvents = (y: number, m: number) => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const from = `${y}-${pad(m + 1)}-01`;
+    const to   = `${y}-${pad(m + 1)}-${pad(new Date(y, m + 1, 0).getDate())}`;
+    api.calendar.getEvents(from, to).then(setCalEvents).catch(console.error);
   };
+
   useEffect(() => { loadReminders(); }, []);
+  useEffect(() => { loadCalEvents(year, month); }, [year, month]);
 
   const prevMonth = () => { if (month === 0) { setMonth(11); setYear(y => y-1); } else setMonth(m => m-1); setSelected(null); };
   const nextMonth = () => { if (month === 11) { setMonth(0); setYear(y => y+1); } else setMonth(m => m+1); setSelected(null); };
 
-  const eventsForDay = (day: number) => SAMPLE_EVENTS.filter(e => e.day === day);
-  const selectedEvents = selected ? eventsForDay(selected) : [];
-  const isToday = (day: number) => day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+  const eventsForDay = (day: number) =>
+    calEvents.filter(ev => {
+      const d = new Date(ev.date);
+      return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
+    });
+
+  const isToday = (day: number) =>
+    day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -155,6 +161,7 @@ export function CalendarPage() {
 
   const pendingReminders = reminders.filter(r => r.status === 'pending');
   const overdueCount = pendingReminders.filter(r => isOverdue(r.date)).length;
+  const selectedEvents = selected ? eventsForDay(selected) : [];
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.22 }} className="space-y-4">
@@ -166,19 +173,28 @@ export function CalendarPage() {
         className="flex items-center justify-between rounded-[24px] px-5 py-4"
         style={glassPanel(isDark)}
       >
-        <div className="flex items-center gap-3">
-          {(Object.entries(EVENT_COLORS) as [EventType, typeof EVENT_COLORS[EventType]][]).map(([type, c]) => (
+        <div className="flex items-center gap-3 flex-wrap">
+          {(Object.entries(EVENT_COLORS) as [DisplayType, typeof EVENT_COLORS[DisplayType]][]).map(([type, c]) => (
             <div key={type} className="flex items-center gap-1.5">
-              <span className="flex h-4 w-4 items-center justify-center rounded-full" style={{ background: c.bg, color: c.text }}>
-                {c.icon}
-              </span>
-              <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.70rem', color: t.textMuted }}>
-                {{ rental: 'تأجير', return: 'إرجاع', payment: 'دفعة', cleaning: 'تنظيف' }[type]}
-              </span>
+              <span className="flex h-4 w-4 items-center justify-center rounded-full" style={{ background: c.bg, color: c.text }}>{c.icon}</span>
+              <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.70rem', color: t.textMuted }}>{c.label}</span>
             </div>
           ))}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <motion.button
+            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center gap-2 rounded-[14px] px-4 py-2 font-semibold"
+            style={{
+              fontFamily: 'Cairo, sans-serif', fontSize: '0.85rem',
+              background: isDark ? 'rgba(201,168,76,0.22)' : 'rgba(201,168,76,0.16)',
+              color: isDark ? '#d4aa58' : '#a87830',
+              border: isDark ? '1px solid rgba(201,168,76,0.35)' : '1px solid rgba(201,168,76,0.30)',
+              boxShadow: '0 2px 10px rgba(201,168,76,0.15)',
+            }}>
+            <Plus size={15} /> إضافة موعد
+          </motion.button>
           <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.18rem', fontWeight: 700, color: t.text1 }}>
             {MONTHS_AR[month]} {year}
           </h1>
@@ -226,6 +242,7 @@ export function CalendarPage() {
                 return (
                   <motion.button key={day} whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }}
                     onClick={() => setSelected(active ? null : day)}
+                    onDoubleClick={e => { e.stopPropagation(); if (events.length > 0) setDetailDay(day); }}
                     className="relative flex flex-col items-center rounded-[14px] px-1 py-2"
                     style={{
                       minHeight: 60,
@@ -236,10 +253,21 @@ export function CalendarPage() {
                       {day}
                     </span>
                     {events.length > 0 && (
-                      <div className="mt-1 flex flex-wrap justify-center gap-0.5">
-                        {events.slice(0, 3).map((e, i) => (
-                          <span key={i} className="h-1.5 w-1.5 rounded-full" style={{ background: EVENT_COLORS[e.type].text }} />
-                        ))}
+                      <div className="mt-1 flex flex-col items-center gap-0.5 w-full px-0.5">
+                        {events.slice(0, 2).map((ev, i) => {
+                          const type = resolveType(ev.event_type);
+                          const c = EVENT_COLORS[type];
+                          return (
+                            <span key={i} className="flex items-center gap-0.5 rounded-[5px] px-1 w-full justify-center"
+                              style={{ background: c.bg, color: c.text, fontSize: '0.58rem', fontFamily: 'Cairo, sans-serif', lineHeight: '1.5' }}>
+                              {c.icon}
+                              <span className="truncate max-w-[36px]">{c.label}</span>
+                            </span>
+                          );
+                        })}
+                        {events.length > 2 && (
+                          <span style={{ fontSize: '0.58rem', color: t.textMuted, fontFamily: 'Cairo, sans-serif' }}>+{events.length - 2}</span>
+                        )}
                       </div>
                     )}
                   </motion.button>
@@ -249,14 +277,13 @@ export function CalendarPage() {
           </AnimatePresence>
         </motion.div>
 
-        {/* Right panel: Events + Reminders */}
+        {/* Right panel */}
         <motion.div
           initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.14, type: 'spring', stiffness: 440, damping: 38 }}
           className="rounded-[24px] flex flex-col"
           style={glassPanel(isDark)}
         >
-          {/* Tab bar */}
           <div className="flex border-b gap-1 p-3 pb-2" style={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }}>
             {([
               { key: 'reminders', label: `التذكيرات${pendingReminders.length > 0 ? ` (${pendingReminders.length})` : ''}` },
@@ -299,30 +326,34 @@ export function CalendarPage() {
                     <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.78rem' }}>لا توجد تذكيرات</p>
                   </div>
                 ) : (
-                  pendingReminders.map((r) => {
+                  pendingReminders.map(r => {
                     const overdue = isOverdue(r.date);
                     return (
                       <motion.div key={r.id} whileHover={{ x: 2 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                        className="flex items-start gap-2 rounded-[14px] px-3 py-2.5"
+                        onClick={() => setDetailReminder(r)}
+                        className="flex items-start gap-2 rounded-[14px] px-3 py-2.5 cursor-pointer"
                         style={{
                           background: overdue ? (isDark ? 'rgba(224,82,82,0.08)' : 'rgba(224,82,82,0.05)') : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.42)'),
-                          border: isDark ? `1px solid ${overdue ? 'rgba(224,82,82,0.20)' : 'rgba(255,255,255,0.07)'}` : '1px solid transparent',
+                          border: isDark ? `1px solid ${overdue ? 'rgba(224,82,82,0.20)' : 'rgba(255,255,255,0.07)'}` : '1px solid rgba(0,0,0,0.04)',
                         }}>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold truncate" style={{ color: t.text1, fontFamily: 'Cairo, sans-serif' }}>{r.title}</p>
                           <p className="text-[10px] mt-0.5" style={{ color: overdue ? '#e05252' : t.textMuted, fontFamily: 'Cairo, sans-serif' }}>
                             {formatDate(r.date, language)}
                           </p>
+                          {r.customer_name && (
+                            <p className="text-[10px] mt-0.5 flex items-center gap-1" style={{ color: t.textMuted, fontFamily: 'Cairo, sans-serif' }}>
+                              <User size={9} /> {r.customer_name}
+                            </p>
+                          )}
                         </div>
                         <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: PRIORITY_COLOR[r.priority] }} />
-                        <div className="flex gap-0.5">
-                          <button onClick={() => markDone(r.id)} className="p-1 rounded-lg transition-colors"
-                            style={{ color: '#4caf7a' }} title="تم">
+                        <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
+                          <button onClick={() => markDone(r.id)} className="p-1 rounded-lg" style={{ color: '#4caf7a' }} title="تم">
                             <CheckCircle size={13} />
                           </button>
                           {canDelete && (
-                            <button onClick={() => setDeleting(r)} className="p-1 rounded-lg transition-colors"
-                              style={{ color: '#e05252' }} title="حذف">
+                            <button onClick={() => setDeleting(r)} className="p-1 rounded-lg" style={{ color: '#e05252' }} title="حذف">
                               <Trash2 size={12} />
                             </button>
                           )}
@@ -339,7 +370,7 @@ export function CalendarPage() {
               <>
                 {!selected && (
                   <p className="text-center py-8" style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.78rem', color: t.textFaint }}>
-                    انقر على يوم لعرض الأحداث
+                    انقر على يوم لعرض الأحداث · انقر مرتين لعرض التفاصيل
                   </p>
                 )}
                 {selected && selectedEvents.length === 0 && (
@@ -347,39 +378,57 @@ export function CalendarPage() {
                     لا توجد أحداث في هذا اليوم
                   </p>
                 )}
-                {selected && selectedEvents.map((e, i) => {
-                  const c = EVENT_COLORS[e.type];
+                {selected && selectedEvents.map((ev, i) => {
+                  const type = resolveType(ev.event_type);
+                  const c = EVENT_COLORS[type];
                   return (
                     <motion.div key={i} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
-                      className="flex items-center gap-2.5 rounded-[14px] px-3 py-2.5"
+                      className="rounded-[14px] px-3 py-2.5 space-y-1"
                       style={{ background: c.bg, border: `1px solid ${c.text}28` }}>
-                      <span style={{ color: c.text }}>{c.icon}</span>
-                      <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.78rem', fontWeight: 500, color: t.text1 }}>
-                        {e.title}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span style={{ color: c.text }}>{c.icon}</span>
+                        <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.78rem', fontWeight: 600, color: t.text1 }}>{ev.title}</span>
+                      </div>
+                      {ev.customer_name && (
+                        <p className="flex items-center gap-1 text-[0.70rem] pr-5" style={{ color: t.text2, fontFamily: 'Cairo, sans-serif' }}>
+                          <User size={10} style={{ color: c.text }} /> {ev.customer_name}
+                        </p>
+                      )}
+                      {ev.dress_code && (
+                        <p className="flex items-center gap-1 text-[0.70rem] pr-5" style={{ color: t.text2, fontFamily: 'Cairo, sans-serif' }}>
+                          <Tag size={10} style={{ color: c.text }} /> {ev.dress_code}
+                        </p>
+                      )}
                     </motion.div>
                   );
                 })}
 
                 {/* Month summary */}
-                <div className="mt-4 pt-3 space-y-2" style={{ borderTop: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,0,0,0.06)' }}>
-                  <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.67rem', fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <div className="mt-4 pt-3 space-y-1" style={{ borderTop: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,0,0,0.06)' }}>
+                  <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.67rem', fontWeight: 700, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', paddingBottom: 4 }}>
                     ملخص الشهر
                   </p>
-                  {(Object.entries(EVENT_COLORS) as [EventType, typeof EVENT_COLORS[EventType]][]).map(([type, c]) => {
-                    const count = SAMPLE_EVENTS.filter(e => e.type === type).length;
+                  {(Object.entries(EVENT_COLORS) as [DisplayType, typeof EVENT_COLORS[DisplayType]][]).map(([type, c]) => {
+                    const count = calEvents.filter(ev => resolveType(ev.event_type) === type).length;
+                    if (count === 0) return null;
                     return (
-                      <div key={type} className="flex items-center justify-between">
+                      <motion.button key={type} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}
+                        onClick={() => setSummaryType(type)}
+                        className="flex items-center justify-between w-full rounded-[10px] px-2 py-1.5"
+                        style={{ background: summaryType === type ? c.bg : 'transparent', border: `1px solid ${summaryType === type ? c.text + '30' : 'transparent'}` }}>
                         <div className="flex items-center gap-2">
                           <span className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: c.bg, color: c.text }}>{c.icon}</span>
-                          <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.74rem', color: t.text2 }}>
-                            {{ rental: 'تأجير', return: 'إرجاع', payment: 'دفعة', cleaning: 'تنظيف' }[type]}
-                          </span>
+                          <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.74rem', color: t.text2 }}>{c.label}</span>
                         </div>
                         <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '0.88rem', fontWeight: 700, color: c.text }}>{count}</span>
-                      </div>
+                      </motion.button>
                     );
                   })}
+                  {calEvents.length === 0 && (
+                    <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.74rem', color: t.textFaint, textAlign: 'center', padding: '8px 0' }}>
+                      لا توجد أحداث هذا الشهر
+                    </p>
+                  )}
                 </div>
               </>
             )}
@@ -388,6 +437,183 @@ export function CalendarPage() {
       </div>
 
       {showAddForm && <AddReminderForm onClose={() => setShowAddForm(false)} onSaved={() => { setShowAddForm(false); loadReminders(); }} />}
+
+      {/* Day detail popup (double-click) */}
+      <AnimatePresence>
+        {detailDay !== null && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.50)', backdropFilter: 'blur(5px)' }}
+            onClick={() => setDetailDay(null)}>
+            <motion.div initial={{ scale: 0.92, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 16 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+              onClick={e => e.stopPropagation()}
+              className="rounded-[22px] p-5 w-full space-y-3 overflow-y-auto"
+              style={glassPanel(isDark, { maxWidth: 400, maxHeight: '80vh' })}>
+              <div className="flex items-center justify-between">
+                <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.05rem', fontWeight: 700, color: t.text1 }}>
+                  {detailDay} {MONTHS_AR[month]} {year}
+                </h2>
+                <button onClick={() => setDetailDay(null)} className="w-7 h-7 flex items-center justify-center rounded-full"
+                  style={{ background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)', color: t.textMuted }}>
+                  <X size={14} />
+                </button>
+              </div>
+              {eventsForDay(detailDay).map((ev, i) => {
+                const type = resolveType(ev.event_type);
+                const c = EVENT_COLORS[type];
+                return (
+                  <div key={i} className="rounded-[14px] px-4 py-3 space-y-2"
+                    style={{ background: c.bg, border: `1px solid ${c.text}28` }}>
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full flex-shrink-0"
+                        style={{ background: `${c.text}22`, color: c.text }}>{c.icon}</span>
+                      <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.84rem', fontWeight: 700, color: t.text1 }}>{ev.title}</p>
+                    </div>
+                    <div className="space-y-1 pr-8">
+                      {ev.customer_name && (
+                        <p className="flex items-center gap-1.5 text-[0.74rem]" style={{ color: t.text2, fontFamily: 'Cairo, sans-serif' }}>
+                          <User size={11} style={{ color: c.text }} /> {ev.customer_name}
+                        </p>
+                      )}
+                      {ev.dress_code && (
+                        <p className="flex items-center gap-1.5 text-[0.74rem]" style={{ color: t.text2, fontFamily: 'Cairo, sans-serif' }}>
+                          <Tag size={11} style={{ color: c.text }} /> {ev.dress_code}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Reminder detail popup */}
+      <AnimatePresence>
+        {detailReminder && (() => {
+          const r = detailReminder;
+          const overdue = isOverdue(r.date);
+          const typeLabel: Record<string, string> = { pickup: 'استلام', return: 'إرجاع', payment: 'دفع', cleaning: 'تنظيف' };
+          const prioLabel: Record<string, string> = { urgent: 'عاجل', high: 'مرتفع', normal: 'عادي', low: 'منخفض' };
+          return (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              style={{ background: 'rgba(0,0,0,0.50)', backdropFilter: 'blur(5px)' }}
+              onClick={() => setDetailReminder(null)}>
+              <motion.div initial={{ scale: 0.92, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 16 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                onClick={e => e.stopPropagation()}
+                className="rounded-[22px] p-5 w-full space-y-4"
+                style={glassPanel(isDark, { maxWidth: 380 })}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.68rem', color: t.textMuted, marginBottom: 4 }}>{typeLabel[r.reminder_type] ?? r.reminder_type}</p>
+                    <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.05rem', fontWeight: 700, color: t.text1 }}>{r.title}</h2>
+                  </div>
+                  <button onClick={() => setDetailReminder(null)} className="w-7 h-7 flex items-center justify-center rounded-full mt-0.5 flex-shrink-0"
+                    style={{ background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)', color: t.textMuted }}>
+                    <X size={14} />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { icon: <CalendarDays size={13} />, label: 'التاريخ',  value: formatDate(r.date, language), color: overdue ? '#e05252' : t.gold },
+                    r.customer_name ? { icon: <User size={13} />,     label: 'العميل',  value: r.customer_name, color: t.gold } : null,
+                    r.dress_code    ? { icon: <Tag size={13} />,      label: 'الفستان', value: r.dress_code,    color: t.gold } : null,
+                    r.description   ? { icon: <FileText size={13} />, label: 'الوصف',   value: r.description,   color: t.gold } : null,
+                  ].filter(Boolean).map((row, i) => row && (
+                    <div key={i} className="flex items-start gap-3 rounded-[12px] px-3 py-2.5"
+                      style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.55)', border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.80)' }}>
+                      <span style={{ color: (row as { color: string }).color, marginTop: 1 }}>{(row as { icon: React.ReactNode }).icon}</span>
+                      <div>
+                        <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.65rem', color: t.textMuted }}>{(row as { label: string }).label}</p>
+                        <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.80rem', fontWeight: 600, color: t.text1 }}>{(row as { value: string }).value}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="text-[0.70rem] px-2 py-0.5 rounded-full" style={{ fontFamily: 'Cairo, sans-serif', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', color: t.textMuted }}>
+                      الأولوية: {prioLabel[r.priority]}
+                    </span>
+                    <span className="w-2 h-2 rounded-full" style={{ background: PRIORITY_COLOR[r.priority] }} />
+                    {overdue && <span className="text-[0.70rem] px-2 py-0.5 rounded-full" style={{ fontFamily: 'Cairo, sans-serif', background: 'rgba(224,82,82,0.14)', color: '#e05252' }}>متأخر</span>}
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button variant="gold" onClick={() => { markDone(r.id); setDetailReminder(null); }}>تم</Button>
+                  <Button variant="ghost" onClick={() => setDetailReminder(null)}>إغلاق</Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* Summary type popup */}
+      <AnimatePresence>
+        {summaryType && (() => {
+          const c = EVENT_COLORS[summaryType];
+          const events = calEvents.filter(ev => resolveType(ev.event_type) === summaryType);
+          return (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              style={{ background: 'rgba(0,0,0,0.50)', backdropFilter: 'blur(5px)' }}
+              onClick={() => setSummaryType(null)}>
+              <motion.div initial={{ scale: 0.92, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.92, y: 16 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                onClick={e => e.stopPropagation()}
+                className="rounded-[22px] p-5 w-full space-y-3 overflow-y-auto"
+                style={glassPanel(isDark, { maxWidth: 420, maxHeight: '80vh' })}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: c.bg, color: c.text }}>{c.icon}</span>
+                    <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.05rem', fontWeight: 700, color: t.text1 }}>
+                      {c.label} — {MONTHS_AR[month]}
+                    </h2>
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ fontFamily: 'Cairo, sans-serif', background: c.bg, color: c.text }}>{events.length}</span>
+                  </div>
+                  <button onClick={() => setSummaryType(null)} className="w-7 h-7 flex items-center justify-center rounded-full"
+                    style={{ background: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)', color: t.textMuted }}>
+                    <X size={14} />
+                  </button>
+                </div>
+                {events.map((ev, i) => {
+                  const d = new Date(ev.date);
+                  return (
+                    <div key={i} className="rounded-[14px] px-4 py-3 space-y-2"
+                      style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.55)', border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.80)' }}>
+                      <div className="flex items-center justify-between gap-2">
+                        <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem', fontWeight: 700, color: t.text1 }}>{ev.title}</p>
+                        <span className="text-[0.70rem] px-2 py-0.5 rounded-full flex-shrink-0"
+                          style={{ fontFamily: "'Playfair Display', serif", background: c.bg, color: c.text, fontWeight: 700 }}>
+                          {d.getDate()} {MONTHS_AR[d.getMonth()]}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1">
+                        {ev.customer_name && (
+                          <p className="flex items-center gap-1 text-[0.72rem]" style={{ color: t.text2, fontFamily: 'Cairo, sans-serif' }}>
+                            <User size={10} style={{ color: c.text }} /> {ev.customer_name}
+                          </p>
+                        )}
+                        {ev.dress_code && (
+                          <p className="flex items-center gap-1 text-[0.72rem]" style={{ color: t.text2, fontFamily: 'Cairo, sans-serif' }}>
+                            <Tag size={10} style={{ color: c.text }} /> {ev.dress_code}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {events.length === 0 && (
+                  <p className="text-center py-6" style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.78rem', color: t.textFaint }}>لا توجد أحداث</p>
+                )}
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
 
       <ConfirmDialog open={!!deleting} onClose={() => setDeleting(null)} onConfirm={handleDelete}
         loading={deleteLoading} title="حذف التذكير" message={`حذف: ${deleting?.title}؟`}
