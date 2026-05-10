@@ -7,6 +7,7 @@ import {
   Package, ClipboardList, Search, Loader2, X, Banknote,
 } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
+import { useAuthStore } from '../../store/authStore';
 import { api } from '../../lib/api';
 import { SaleForm } from '../sales/SaleForm';
 import { RentalForm } from '../rentals/RentalForm';
@@ -458,6 +459,8 @@ function DetailPanel({ title, onClose, children, isDark }: {
 // Page
 export function Homepage() {
   const { theme, language, addToast, remindersRefreshKey, bumpReminders, exchangeRates } = useUIStore();
+  const { user } = useAuthStore();
+  const isOwner = user?.role === 'owner';
   const isDark = theme === 'dark';
   const navigate = useNavigate();
   const fmtUSD = (v: number) =>
@@ -647,8 +650,8 @@ export function Homepage() {
       accent: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.46)' },
     { title: 'المصروفات',    icon: <Wallet size={22} />,      action: 'link',  to: '/expenses',
       accent: isDark ? 'rgba(239,68,68,0.18)' : 'rgba(239,68,68,0.12)' },
-    { title: 'التوريدات',    icon: <Truck size={22} />,       action: 'link',  to: '/deliveries',
-      accent: isDark ? 'rgba(6,182,212,0.20)' : 'rgba(6,182,212,0.14)' },
+    ...(isOwner ? [{ title: 'التوريدات', icon: <Truck size={22} />, action: 'link' as const, to: '/deliveries',
+      accent: isDark ? 'rgba(6,182,212,0.20)' : 'rgba(6,182,212,0.14)' }] : []),
   ];
 
   const overdueCount = reminders.filter(r => isOverdue(r.date)).length;
