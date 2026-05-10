@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePermissions } from '../../hooks/usePermissions';
+import { EmployeeDashboard } from './EmployeeDashboard';
 import {
   ShoppingBag, Calendar, DollarSign, BarChart3, Sparkles,
   TrendingDown, TrendingUp, RotateCcw, Download, ChevronDown,
@@ -1076,9 +1078,16 @@ function AddEmployeeModal({ open, onClose, isDark }: { open: boolean; onClose: (
   );
 }
 
+// ---- OwnerDashboard (internal) ----
+
+function OwnerDashboard() {
+  const { theme } = useUIStore();
+  return <LightDashboard isDark={theme === 'dark'} />;
+}
+
 // ---- Dashboard (exported) ----
 
 export function Dashboard() {
-  const { theme } = useUIStore();
-  return <LightDashboard isDark={theme === 'dark'} />;
+  const { isOwner } = usePermissions();
+  return isOwner ? <OwnerDashboard /> : <EmployeeDashboard />;
 }
