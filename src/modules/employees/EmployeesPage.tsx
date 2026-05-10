@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Plus, Pencil, Trash2, ShoppingBag, RotateCcw,
   KeyRound, X, CheckCircle, AlertTriangle, Shield, TrendingUp,
-  Clock, ChevronLeft,
+  Clock, ChevronLeft, Megaphone, Send,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -14,7 +14,7 @@ import { Button } from '../../components/Button';
 import { Input, Select } from '../../components/Input';
 import { Modal, ConfirmDialog } from '../../components/Modal';
 import { formatDate, formatCurrency, isOverdue } from '../../utils/formatters';
-import type { User, Transaction, Reminder } from '../../types';
+import type { User, Transaction, Reminder, Announcement } from '../../types';
 
 function glass(isDark: boolean, extra?: React.CSSProperties): React.CSSProperties {
   return {
@@ -247,7 +247,7 @@ function EmployeeDetail({ emp, txns, reminders, isDark, onClose, onEdit, onDelet
 
 // ─── OWNER VIEW ───────────────────────────────────────────────────────────────
 function OwnerView() {
-  const { theme, addToast } = useUIStore();
+  const { theme, addToast, language } = useUIStore();
   const isDark = theme === 'dark';
   const t = tok(isDark);
   const { user: me } = useAuthStore();
@@ -255,6 +255,10 @@ function OwnerView() {
   const [users, setUsers]       = useState<User[]>([]);
   const [txns, setTxns]         = useState<Transaction[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [annTitle, setAnnTitle]           = useState('');
+  const [annBody, setAnnBody]             = useState('');
+  const [annLoading, setAnnLoading]       = useState(false);
   const [selected, setSelected] = useState<User | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing]   = useState<User | null>(null);
@@ -265,11 +269,34 @@ function OwnerView() {
     api.auth.getUsers().then(setUsers).catch(console.error);
     api.transactions.getAll().then(setTxns).catch(console.error);
     api.reminders.getAll().then(setReminders).catch(console.error);
+    api.announcements.getAll().then(setAnnouncements).catch(console.error);
   };
   useEffect(() => { load(); }, []);
 
   const employees = users.filter(u => u.id !== me?.id);
   const active = employees.filter(u => u.active).length;
+
+  const createAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!annTitle.trim()) return;
+    setAnnLoading(true);
+    try {
+      const created = await api.announcements.create(annTitle.trim(), annBody.trim() || undefined);
+      setAnnouncements(prev => [created, ...prev]);
+      setAnnTitle('');
+      setAnnBody('');
+      addToast('success', 'تم نشر الإعلان');
+    } catch (e) { addToast('error', String(e)); }
+    finally { setAnnLoading(false); }
+  };
+
+  const deleteAnnouncement = async (id: string) => {
+    try {
+      await api.announcements.delete(id);
+      setAnnouncements(prev => prev.filter(a => a.id !== id));
+      addToast('success', 'تم حذف الإعلان');
+    } catch (e) { addToast('error', String(e)); }
+  };
 
   const handleDelete = async () => {
     if (!deleting) return;
@@ -363,6 +390,103 @@ function OwnerView() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Announcements panel */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.10, type: 'spring', stiffness: 440, damping: 38 }}
+        className="rounded-[24px] p-5"
+        style={glass(isDark)}
+      >
+        <div className="flex items-center gap-2.5 mb-4">
+          <span style={{ color: t.gold }}><Megaphone size={17} /></span>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: '1rem', color: t.text1 }}>
+            إعلانات الموظفين
+          </h2>
+        </div>
+
+        {/* Create form */}
+        <form onSubmit={createAnnouncement} className="space-y-2 mb-4">
+          <input
+            value={annTitle}
+            onChange={e => setAnnTitle(e.target.value)}
+            placeholder="عنوان الإعلان..."
+            required
+            className="w-full rounded-[12px] px-3 py-2 text-sm outline-none"
+            style={{
+              fontFamily: 'Cairo, sans-serif',
+              background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)',
+              border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(0,0,0,0.08)',
+              color: t.text1,
+            }}
+          />
+          <textarea
+            value={annBody}
+            onChange={e => setAnnBody(e.target.value)}
+            placeholder="تفاصيل إضافية (اختياري)..."
+            rows={2}
+            className="w-full rounded-[12px] px-3 py-2 text-sm outline-none resize-none"
+            style={{
+              fontFamily: 'Cairo, sans-serif',
+              background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)',
+              border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(0,0,0,0.08)',
+              color: t.text1,
+            }}
+          />
+          <button
+            type="submit"
+            disabled={annLoading || !annTitle.trim()}
+            className="flex items-center gap-2 px-4 py-2 rounded-[12px] text-sm font-semibold disabled:opacity-40"
+            style={{
+              fontFamily: 'Cairo, sans-serif',
+              background: 'rgba(201,168,76,0.18)',
+              color: t.gold,
+              border: '1px solid rgba(201,168,76,0.30)',
+            }}
+          >
+            <Send size={13} />
+            {annLoading ? 'جاري النشر...' : 'نشر الإعلان'}
+          </button>
+        </form>
+
+        {/* Existing announcements */}
+        <div className="space-y-2">
+          <AnimatePresence initial={false}>
+            {announcements.length === 0 && (
+              <p className="text-center py-4" style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.75rem', color: t.textFaint }}>
+                لا توجد إعلانات منشورة
+              </p>
+            )}
+            {announcements.map(ann => (
+              <motion.div
+                key={ann.id}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: 16 }}
+                className="flex items-start gap-3 rounded-[14px] px-4 py-3"
+                style={{
+                  background: isDark ? 'rgba(201,168,76,0.07)' : 'rgba(201,168,76,0.05)',
+                  border: isDark ? '1px solid rgba(201,168,76,0.18)' : '1px solid rgba(201,168,76,0.15)',
+                }}
+              >
+                <div className="flex-1 min-w-0">
+                  <p style={{ fontFamily: 'Cairo, sans-serif', fontWeight: 700, fontSize: '0.85rem', color: t.text1 }}>{ann.title}</p>
+                  {ann.body && <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.76rem', color: t.text2, marginTop: 2 }}>{ann.body}</p>}
+                  <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.62rem', color: t.textFaint, marginTop: 4 }}>{formatDate(ann.created_at, language)}</p>
+                </div>
+                <button
+                  onClick={() => deleteAnnouncement(ann.id)}
+                  className="flex-shrink-0 mt-0.5"
+                  style={{ color: '#e05252', opacity: 0.7 }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </motion.div>
 
       {showForm && (
         <UserForm user={editing} onClose={() => { setShowForm(false); setEditing(null); }}
