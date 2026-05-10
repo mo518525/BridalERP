@@ -197,8 +197,6 @@ export function Settings() {
       {/* License */}
       <LicenseSection />
 
-      {/* Seed */}
-      <SeedSection />
 
       {/* Exchange rates */}
       <ExchangeRatesSection />
