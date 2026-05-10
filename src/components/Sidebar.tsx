@@ -248,7 +248,7 @@ export function Sidebar() {
 
             {/* Admin */}
             {isOwner && (
-              <NavItem to="/settings" icon={<Users2 size={16} />} label="الموظفين" open={sidebarOpen} isDark={isDark} />
+              <NavItem to="/employees" icon={<Users2 size={16} />} label="الموظفين" open={sidebarOpen} isDark={isDark} />
             )}
             <NavItem to="/settings" icon={<Settings size={16} />} label="الإعدادات" open={sidebarOpen} isDark={isDark} />
           </nav>

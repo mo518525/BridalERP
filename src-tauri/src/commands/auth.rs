@@ -145,6 +145,31 @@ pub fn delete_user(state: tauri::State<'_, AppState>, id: String, user_id: Strin
 }
 
 #[tauri::command]
+pub fn change_own_password(
+    state: tauri::State<'_, AppState>,
+    user_id: String,
+    old_password: String,
+    new_password: String,
+) -> Result<(), String> {
+    if new_password.trim().len() < 4 { return Err("كلمة المرور قصيرة جداً".to_string()); }
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let stored: String = db.query_row(
+        "SELECT password FROM users WHERE id = ?1",
+        params![user_id],
+        |row| row.get(0),
+    ).map_err(|_| "المستخدم غير موجود".to_string())?;
+    if !verify_password(&old_password, &stored) {
+        return Err("كلمة المرور الحالية غير صحيحة".to_string());
+    }
+    let now = Utc::now().to_rfc3339();
+    db.execute(
+        "UPDATE users SET password = ?1, updated_at = ?2 WHERE id = ?3",
+        params![hash_password(&new_password), now, user_id],
+    ).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 pub fn get_quran_verse(state: tauri::State<'_, AppState>) -> Result<(String, String), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let result = db.query_row(

@@ -213,6 +213,7 @@ fn main() {
             commands::auth::create_user,
             commands::auth::update_user,
             commands::auth::delete_user,
+            commands::auth::change_own_password,
             commands::auth::get_quran_verse,
             // Inventory
             commands::inventory::get_dresses,

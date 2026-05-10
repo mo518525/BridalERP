@@ -84,6 +84,8 @@ export const api = {
       invoke<void>('update_user', { id, name, role, active, password, userId: getCurrentUserId() }),
     deleteUser: (id: string) =>
       invoke<void>('delete_user', { id, userId: getCurrentUserId() }),
+    changeOwnPassword: (oldPassword: string, newPassword: string) =>
+      invoke<void>('change_own_password', { userId: getCurrentUserId(), oldPassword, newPassword }),
     getQuranVerse: () => invoke<[string, string]>('get_quran_verse'),
   },
 

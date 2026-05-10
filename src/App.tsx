@@ -19,6 +19,7 @@ import { RemindersList } from './modules/reminders/RemindersList';
 import { ActivityLogPage } from './modules/activity/ActivityLogPage';
 import { DeliveriesList } from './modules/deliveries/DeliveriesList';
 import { CalendarPage } from './modules/calendar/CalendarPage';
+import { EmployeesPage } from './modules/employees/EmployeesPage';
 
 export function App() {
   const { isAuthenticated, setUser } = useAuthStore();
@@ -86,6 +87,7 @@ export function App() {
           <Route path="reminders" element={<RemindersList />} />
           <Route path="activity" element={<ActivityLogPage />} />
           <Route path="reports" element={<Reports />} />
+          <Route path="employees" element={<EmployeesPage />} />
           <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
