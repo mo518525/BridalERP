@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
+import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Home, BarChart3, CalendarDays,
@@ -95,6 +96,15 @@ export function Sidebar() {
 
   const initials = user?.name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() ?? '؟';
   const avatarColor = (user?.id ? avatarColors[user.id] : null) ?? '#c9a84c';
+  const [avatarPhoto, setAvatarPhoto] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      api.settings.get(`avatar_photo_${user.id}`)
+        .then(v => setAvatarPhoto(v ?? null))
+        .catch(console.error);
+    }
+  }, [user?.id, showProfile]);
 
   return (
     <>
@@ -183,14 +193,14 @@ export function Sidebar() {
             >
               <div
                 className="w-7 h-7 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-[11px] font-bold"
-                style={shopLogo ? { border: `1.5px solid ${avatarColor}55` } : {
+                style={avatarPhoto ? {} : {
                   background: `${avatarColor}28`,
                   color: avatarColor,
                   border: `1.5px solid ${avatarColor}55`,
                   fontFamily: "'Playfair Display', serif",
                 }}>
-                {shopLogo
-                  ? <img src={shopLogo} alt="shop" className="w-full h-full object-contain" />
+                {avatarPhoto
+                  ? <img src={avatarPhoto} alt="avatar" className="w-full h-full object-cover" />
                   : initials}
               </div>
               <AnimatePresence>
