@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { useAuthStore } from './store/authStore';
 import { useUIStore } from './store/uiStore';
-import { api } from './lib/api';
+import { Login } from './modules/auth/Login';
 
 import { Layout } from './components/Layout';
 import { Homepage } from './modules/home/Homepage';
@@ -22,7 +22,7 @@ import { CalendarPage } from './modules/calendar/CalendarPage';
 import { EmployeesPage } from './modules/employees/EmployeesPage';
 
 export function App() {
-  const { isAuthenticated, setUser } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const { theme, language } = useUIStore();
 
   // Apply dark/light class synchronously before first paint
@@ -33,25 +33,6 @@ export function App() {
     document.documentElement.setAttribute('dir', language === 'ar' ? 'rtl' : 'ltr');
   }
 
-  // DEV: Auto-login – remove this block to restore the login screen
-  useEffect(() => {
-    if (!isAuthenticated) {
-      api.auth.login('admin', 'admin123')
-        .then(setUser)
-        .catch(() =>
-          setUser({
-            id: 'dev',
-            name: 'أحمد المدير',
-            username: 'admin',
-            role: 'owner',
-            active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-        );
-    }
-  }, []);
-
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     document.documentElement.setAttribute('lang', language);
@@ -59,15 +40,7 @@ export function App() {
   }, [theme, language]);
 
   if (!isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center h-screen font-arabic" style={{ background: '#0B0F1A' }}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 rounded-full border-[3px] border-gold-400 border-t-transparent animate-spin"
-            style={{ boxShadow: '0 0 14px rgba(201,168,76,0.23)' }} />
-          <p className="text-white/40 text-sm">جاري تهيئة النظام...</p>
-        </div>
-      </div>
-    );
+    return <Login />;
   }
 
   return (
