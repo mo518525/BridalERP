@@ -13,7 +13,7 @@ import type {
   User, Dress, Customer, Transaction, Expense,
   Reminder, ActivityLog, Delivery, DashboardStats,
   FinancialReport, FilterParams, HomeSummary, CalendarEvent,
-  RecurringType,
+  RecurringType, Announcement, EmployeeTodo,
 } from '../types';
 
 // Returns current logged-in user's ID. Throws if not authenticated.
@@ -180,6 +180,24 @@ export const api = {
   calendar: {
     getEvents: (date_from: string, date_to: string) =>
       invoke<CalendarEvent[]>('get_calendar_events', { dateFrom: date_from, dateTo: date_to }),
+  },
+
+  announcements: {
+    getAll: () => invoke<Announcement[]>('get_announcements'),
+    create: (title: string, body?: string) =>
+      invoke<Announcement>('create_announcement', { title, body, userId: getCurrentUserId() }),
+    delete: (id: string) =>
+      invoke<void>('delete_announcement', { id, userId: getCurrentUserId() }),
+  },
+
+  todos: {
+    getAll: () => invoke<EmployeeTodo[]>('get_todos', { userId: getCurrentUserId() }),
+    create: (text: string) =>
+      invoke<EmployeeTodo>('create_todo', { userId: getCurrentUserId(), text }),
+    toggle: (id: string) =>
+      invoke<void>('toggle_todo', { id, userId: getCurrentUserId() }),
+    delete: (id: string) =>
+      invoke<void>('delete_todo', { id, userId: getCurrentUserId() }),
   },
 
   exports: {
