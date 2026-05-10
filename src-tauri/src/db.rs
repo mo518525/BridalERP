@@ -34,6 +34,26 @@ pub fn init_db(path: &Path) -> Result<Connection> {
     let _ = conn.execute_batch("ALTER TABLE expenses ADD COLUMN currency TEXT NOT NULL DEFAULT 'SYP';");
     let _ = conn.execute_batch("ALTER TABLE expenses ADD COLUMN usd_to_try_snapshot REAL NOT NULL DEFAULT 34;");
 
+    // New tables: announcements and employee_todos
+    let _ = conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS announcements (
+            id          TEXT PRIMARY KEY,
+            title       TEXT NOT NULL,
+            body        TEXT,
+            created_by  TEXT NOT NULL,
+            created_at  TEXT NOT NULL
+        );
+    ");
+    let _ = conn.execute_batch("
+        CREATE TABLE IF NOT EXISTS employee_todos (
+            id          TEXT PRIMARY KEY,
+            user_id     TEXT NOT NULL,
+            text        TEXT NOT NULL,
+            done        INTEGER NOT NULL DEFAULT 0,
+            created_at  TEXT NOT NULL
+        );
+    ");
+
     seed_default_data(&conn)?;
 
     Ok(conn)
