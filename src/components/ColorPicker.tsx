@@ -55,7 +55,7 @@ function luminance(hex: string): number {
   return 0.299 * r + 0.587 * g + 0.114 * b;
 }
 
-// const PALETTE = [
+const PALETTE = [
   '#ffffff', '#f5f0e8', '#f0d060', '#f8c8d4',
   '#e8a0a0', '#a0c4e8', '#a0d4a0', '#d4b896',
   '#c0c0c0', '#1a1a2e', '#6b4c9a', '#c0392b',

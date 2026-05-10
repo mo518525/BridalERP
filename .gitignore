@@ -7,3 +7,5 @@ src-tauri/target/
 *.db
 *.db-shm
 *.db-wal
+.claude/
+codex-plugin-cc/
