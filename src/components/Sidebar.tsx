@@ -115,7 +115,7 @@ export function Sidebar() {
             <Link to="/" className={cn('flex items-center gap-3 min-w-0', !sidebarOpen && 'flex-col gap-2')}>
               <motion.div
                 whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
-                className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0 overflow-hidden"
+                className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0"
                 style={{
                   color: isDark ? t.text1 : t.gold,
                   background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.56)',
@@ -124,15 +124,13 @@ export function Sidebar() {
                     ? '0 6px 16px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.11)'
                     : '0 8px 16px rgba(124,124,124,0.08), inset 0 1px 0 rgba(255,255,255,0.88)',
                 }}>
-                {shopLogo
-                  ? <img src={shopLogo} alt="logo" className="w-full h-full object-contain" />
-                  : <DressIcon size={17} />}
+                <DressIcon size={17} />
               </motion.div>
               <AnimatePresence>
                 {sidebarOpen && (
                   <motion.div variants={labelV} initial="hidden" animate="show" exit="hidden" className="overflow-hidden min-w-0">
                     <p className="text-[15px] leading-tight truncate" style={{ color: t.text1, fontFamily: "'Playfair Display', serif" }}>
-                      {shopName || 'Bridal'}
+                      Bridal
                     </p>
                     <p className="text-[10px]" style={{ color: t.textMuted }}>Management</p>
                   </motion.div>
@@ -199,9 +197,15 @@ export function Sidebar() {
                     <p className="truncate text-[13px]" style={{ color: t.text1, fontWeight: isDark ? 600 : 800, fontFamily: 'Cairo, sans-serif' }}>
                       {user?.name}
                     </p>
-                    <p className="text-[10px] truncate" style={{ color: t.textMuted, fontFamily: 'Cairo, sans-serif' }}>
-                      {({ owner: 'مالك', employee: 'موظف', cashier: 'كاشير' } as Record<string, string>)[user?.role ?? ''] ?? user?.role}
-                    </p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      {shopLogo && (
+                        <img src={shopLogo} alt="" className="w-3.5 h-3.5 rounded object-contain flex-shrink-0"
+                          style={{ opacity: 0.75 }} />
+                      )}
+                      <p className="text-[10px] truncate" style={{ color: t.textMuted, fontFamily: 'Cairo, sans-serif' }}>
+                        {shopName || (({ owner: 'مالك', employee: 'موظف', cashier: 'كاشير' } as Record<string, string>)[user?.role ?? ''] ?? user?.role)}
+                      </p>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

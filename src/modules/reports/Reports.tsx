@@ -376,6 +376,12 @@ function CustomersPreview({ data, isDark }: { data: Customer[]; isDark: boolean 
 
 // Print / PDF
 async function exportToPdf(result: ReportResult, from: string, to: string, activeDef: ReportDef, toast: ToastFn, shopName: string, shopLogo: string) {
+  const [shopPhone, shopCity, shopAddress] = await Promise.all([
+    api.settings.get('shop_phone').catch(() => null),
+    api.settings.get('shop_city').catch(() => null),
+    api.settings.get('shop_address').catch(() => null),
+  ]);
+
   const getTableHtml = (headers: string[], rows: (string | number | null | undefined)[][]) => `
     <table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
     <tbody>${rows.map((r, i) => `<tr class="${i%2?'alt':''}">${r.map(c => `<td>${c ?? '—'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
@@ -436,16 +442,37 @@ async function exportToPdf(result: ReportResult, from: string, to: string, activ
     .kpi-label{font-size:9px;color:#7a5c2e;margin-bottom:4px}
     .kpi-val{font-size:15px;font-weight:900;direction:ltr}
     .kpi-val.gold{color:#c9a84c}.kpi-val.blue{color:#3b82f6}.kpi-val.green{color:#16a34a}.kpi-val.red{color:#dc2626}
-    .footer{margin-top:32px;padding-top:16px;border-top:1px solid #e8d9a0;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#7a5c2e}
+    .footer{margin-top:32px;padding-top:14px;border-top:2px solid #e8d9a0}
+    .footer-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+    .footer-shop{display:flex;align-items:center;gap:10px}
+    .footer-logo{width:32px;height:32px;object-fit:contain;border-radius:6px}
+    .footer-shop-name{font-size:12px;font-weight:800;color:#1a0f04}
+    .footer-contact{display:flex;flex-direction:column;gap:3px;margin-top:4px}
+    .footer-contact span{font-size:9px;color:#7a5c2e}
+    .footer-report{text-align:left;font-size:9px;color:#a08050;padding-top:4px}
     @media print{body{padding:0}@page{size:A4 landscape;margin:3cm}}
   </style></head><body>
   <div class="header">
-    <div class="logo">${shopLogo ? `<img src="${shopLogo}" style="width:44px;height:44px;object-fit:contain;border-radius:10px"/>` : '<div class="logo-icon">👗</div>'}<div><div class="company-name">${shopName || 'Bridal ERP'}</div><div class="company-sub">نظام إدارة محل الأفراح</div></div></div>
+    <div class="logo">${shopLogo ? `<img src="${shopLogo}" style="width:44px;height:44px;object-fit:contain;border-radius:10px"/>` : '<div class="logo-icon">👗</div>'}<div><div class="company-name">${shopName || 'Bridal ERP'}</div></div></div>
     <div class="report-title"><h1>${activeDef.label}</h1><p>${from} — ${to}</p></div>
     <div class="date-info"><div>تاريخ الإصدار: <strong>${new Date().toLocaleDateString('ar')}</strong></div></div>
   </div>
   ${body}
-  <div class="footer"><span>${shopName || 'Bridal ERP'} — نظام إدارة محل الأفراح</span><span>${activeDef.label} · ${from} إلى ${to}</span></div>
+  <div class="footer">
+    <div class="footer-inner">
+      <div class="footer-shop">
+        ${shopLogo ? `<img class="footer-logo" src="${shopLogo}" alt="logo"/>` : ''}
+        <div>
+          <div class="footer-shop-name">${shopName || ''}</div>
+          <div class="footer-contact">
+            ${shopCity ? `<span>📍 ${shopCity}${shopAddress ? ' — ' + shopAddress : ''}</span>` : shopAddress ? `<span>📍 ${shopAddress}</span>` : ''}
+            ${shopPhone ? `<span>📞 ${shopPhone}</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="footer-report">${activeDef.label} · ${from} — ${to}</div>
+    </div>
+  </div>
   </body></html>`;
 
   const base = `${from}_${to}`;
