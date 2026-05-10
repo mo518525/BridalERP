@@ -53,6 +53,7 @@ pub fn init_db(path: &Path) -> Result<Connection> {
             created_at  TEXT NOT NULL
         );
     ");
+    let _ = conn.execute_batch("CREATE INDEX IF NOT EXISTS idx_employee_todos_user ON employee_todos(user_id);");
 
     seed_default_data(&conn)?;
 

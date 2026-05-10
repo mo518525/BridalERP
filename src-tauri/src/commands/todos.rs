@@ -53,6 +53,7 @@ pub fn toggle_todo(
     user_id: String,
 ) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
+    let _ = crate::auth_guard::get_user_context(&db, &user_id)?;
     db.execute(
         "UPDATE employee_todos SET done = 1 - done WHERE id=?1 AND user_id=?2",
         params![id, user_id],
@@ -67,6 +68,7 @@ pub fn delete_todo(
     user_id: String,
 ) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
+    let _ = crate::auth_guard::get_user_context(&db, &user_id)?;
     db.execute(
         "DELETE FROM employee_todos WHERE id=?1 AND user_id=?2",
         params![id, user_id],

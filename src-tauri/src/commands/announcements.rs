@@ -48,6 +48,17 @@ pub fn create_announcement(
         params![id, title.trim(), body, user_id, now],
     ).map_err(|e| e.to_string())?;
 
+    let desc = format!("إعلان جديد: {}", title.trim());
+    crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
+        user_id: Some(&user_id),
+        user_name: None,
+        action: "create_announcement",
+        entity_type: "announcement",
+        entity_id: Some(&id),
+        description: &desc,
+        metadata: None,
+    });
+
     Ok(Announcement { id, title: title.trim().to_string(), body, created_by: user_id, created_at: now })
 }
 
@@ -63,5 +74,16 @@ pub fn delete_announcement(
 
     db.execute("DELETE FROM announcements WHERE id=?1", params![id])
         .map_err(|e| e.to_string())?;
+
+    crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
+        user_id: Some(&user_id),
+        user_name: None,
+        action: "delete_announcement",
+        entity_type: "announcement",
+        entity_id: Some(&id),
+        description: "حذف إعلان",
+        metadata: None,
+    });
+
     Ok(())
 }
