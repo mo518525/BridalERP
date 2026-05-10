@@ -90,7 +90,7 @@ fn migrate_transactions_payment_method(conn: &Connection) -> Result<()> {
 fn seed_default_data(conn: &Connection) -> Result<()> {
     let now = Utc::now().to_rfc3339();
 
-    // ── Admin user ────────────────────────────────────────────────────
+    // Admin user
     let user_count: i64 = conn.query_row("SELECT COUNT(*) FROM users", [], |r| r.get(0))?;
     if user_count == 0 {
         let hashed = hash_password("admin123");
@@ -101,7 +101,7 @@ fn seed_default_data(conn: &Connection) -> Result<()> {
         )?;
     }
 
-    // ── Quran verses ──────────────────────────────────────────────────
+    // Quran verses
     let verse_count: i64 = conn.query_row("SELECT COUNT(*) FROM quran_verses", [], |r| r.get(0))?;
     if verse_count == 0 {
         let verses = [
@@ -123,7 +123,7 @@ fn seed_default_data(conn: &Connection) -> Result<()> {
         }
     }
 
-    // ── Sample dresses ────────────────────────────────────────────────
+    // Sample dresses
     let dress_count: i64 = conn.query_row("SELECT COUNT(*) FROM dresses", [], |r| r.get(0))?;
     if dress_count == 0 {
         let dresses: &[(&str, &str, &str, &str, f64, &str)] = &[
@@ -156,7 +156,7 @@ fn seed_default_data(conn: &Connection) -> Result<()> {
         }
     }
 
-    // ── Sample customers ──────────────────────────────────────────────
+    // Sample customers
     let customer_count: i64 = conn.query_row("SELECT COUNT(*) FROM customers", [], |r| r.get(0))?;
     if customer_count == 0 {
         let customers: &[(&str, &str, &str)] = &[
@@ -181,7 +181,7 @@ fn seed_default_data(conn: &Connection) -> Result<()> {
         }
     }
 
-    // ── Sample expenses ───────────────────────────────────────────────
+    // Sample expenses
     let expense_count: i64 = conn.query_row("SELECT COUNT(*) FROM expenses", [], |r| r.get(0))?;
     if expense_count == 0 {
         let expenses: &[(&str, f64, &str, &str, &str)] = &[
@@ -206,7 +206,7 @@ fn seed_default_data(conn: &Connection) -> Result<()> {
         }
     }
 
-    // ── Sample reminders ──────────────────────────────────────────────
+    // Sample reminders
     let reminder_count: i64 = conn.query_row("SELECT COUNT(*) FROM reminders", [], |r| r.get(0))?;
     if reminder_count == 0 {
         let reminders: &[(&str, &str, &str, &str, &str)] = &[

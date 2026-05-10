@@ -35,7 +35,7 @@ const RECURRING_META: Record<RecurringType, { label: string; color: string; bg: 
   weekly: { label: 'أسبوعي', color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
 };
 
-// ─── Table layout ─────────────────────────────────────────────────────────────
+// Table layout
 const EXPENSES_COLS = '1fr 1fr 1fr 1fr 2fr auto';
 const EXPENSES_HDR: React.CSSProperties = {
   gridTemplateColumns: EXPENSES_COLS,

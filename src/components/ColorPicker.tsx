@@ -8,8 +8,7 @@ interface Props {
   containerClass?: string;
 }
 
-// ── colour math ───────────────────────────────────────────────────────────────
-
+// colour math
 function hexToHsv(hex: string): [number, number, number] {
   const c = hex.replace('#', '');
   if (c.length !== 6) return [0, 0, 1];
@@ -56,9 +55,7 @@ function luminance(hex: string): number {
   return 0.299 * r + 0.587 * g + 0.114 * b;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
-const PALETTE = [
+// const PALETTE = [
   '#ffffff', '#f5f0e8', '#f0d060', '#f8c8d4',
   '#e8a0a0', '#a0c4e8', '#a0d4a0', '#d4b896',
   '#c0c0c0', '#1a1a2e', '#6b4c9a', '#c0392b',
@@ -93,7 +90,7 @@ export function ColorPicker({ value, onChange, label, containerClass }: Props) {
     onChange(hex);
   }, [onChange]);
 
-  // ── SV picker drag ─────────────────────────────────────────────────────────
+  // SV picker drag
   const updateSv = useCallback((e: MouseEvent | React.MouseEvent) => {
     const el = svRef.current;
     if (!el) return;
@@ -105,7 +102,7 @@ export function ColorPicker({ value, onChange, label, containerClass }: Props) {
     emit(...next);
   }, [hsv, emit]);
 
-  // ── Hue drag ───────────────────────────────────────────────────────────────
+  // Hue drag
   const updateHue = useCallback((e: MouseEvent | React.MouseEvent) => {
     const el = hueRef.current;
     if (!el) return;
@@ -196,7 +193,7 @@ export function ColorPicker({ value, onChange, label, containerClass }: Props) {
             boxShadow: '0 32px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
           }}
         >
-          {/* ── SV picker area ─────────────────────────────────────────────── */}
+          {/* SV picker area */}
           <div
             ref={svRef}
             onMouseDown={(e) => { dragging.current = 'sv'; updateSv(e); }}
@@ -219,7 +216,7 @@ export function ColorPicker({ value, onChange, label, containerClass }: Props) {
             />
           </div>
 
-          {/* ── Hue slider ─────────────────────────────────────────────────── */}
+          {/* Hue slider */}
           <div
             ref={hueRef}
             onMouseDown={(e) => { dragging.current = 'hue'; updateHue(e); }}
@@ -240,7 +237,7 @@ export function ColorPicker({ value, onChange, label, containerClass }: Props) {
             />
           </div>
 
-          {/* ── Preview + Hex input ────────────────────────────────────────── */}
+          {/* Preview + Hex input */}
           <div className="flex items-center gap-3">
             <div
               className="w-12 h-12 rounded-xl flex-shrink-0 ring-1 ring-white/10"
@@ -263,7 +260,7 @@ export function ColorPicker({ value, onChange, label, containerClass }: Props) {
             </div>
           </div>
 
-          {/* ── Quick palette ──────────────────────────────────────────────── */}
+          {/* Quick palette */}
           <div>
             <p className="text-[10px] text-white/30 mb-2">ألوان سريعة</p>
             <div className="flex flex-wrap gap-2">
@@ -280,7 +277,7 @@ export function ColorPicker({ value, onChange, label, containerClass }: Props) {
             </div>
           </div>
 
-          {/* ── Footer actions ─────────────────────────────────────────────── */}
+          {/* Footer actions */}
           <div className="flex items-center justify-between pt-1 border-t border-white/[0.07]">
             <button
               type="button"

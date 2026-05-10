@@ -15,7 +15,7 @@ import { formatCurrency, formatDate, todayISO } from '../../utils/formatters';
 import { DRESS_STYLES_AR } from '../../types';
 import type { Delivery, Dress } from '../../types';
 
-// ─── Table layout ─────────────────────────────────────────────────────────────
+// Table layout
 const DELIVERIES_COLS = '0.7fr 1.3fr 1.1fr 1fr 0.6fr auto';
 const DELIVERIES_HDR: React.CSSProperties = {
   gridTemplateColumns: DELIVERIES_COLS,
@@ -206,8 +206,7 @@ export function DeliveriesList() {
   );
 }
 
-// ─── Delivery Form ────────────────────────────────────────────────────────────
-
+// Delivery Form
 function DeliveryForm({
   onClose,
   onSaved,
@@ -297,8 +296,7 @@ function DeliveryForm({
   );
 }
 
-// ─── Delivery Details Modal (eye icon) ───────────────────────────────────────
-
+// Delivery Details Modal (eye icon)
 function DeliveryDetailsModal({ delivery, onClose }: { delivery: Delivery; onClose: () => void }) {
   const { language } = useUIStore();
   const { addToast } = useUIStore();
@@ -378,8 +376,7 @@ function DeliveryDetailsModal({ delivery, onClose }: { delivery: Delivery; onClo
   );
 }
 
-// ─── Dress Entry Popup (new delivery + edit/add-more) ────────────────────────
-
+// Dress Entry Popup (new delivery + edit/add-more)
 type DressEntry = {
   code: string;
   color: string;
@@ -567,8 +564,7 @@ function DressEntryPopup({
   );
 }
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
+// helpers
 function statusLabel(s: string) {
   const m: Record<string, string> = {
     available: 'متاح', reserved: 'محجوز', rented: 'مؤجر',

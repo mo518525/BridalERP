@@ -12,8 +12,7 @@ import { useAuthStore } from '../store/authStore';
 import { usePermissions } from '../hooks/usePermissions';
 import { tok } from '../utils/themeTokens';
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
-
+// helpers
 const DressIcon = ({ size = 18 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -41,8 +40,7 @@ const labelV = {
   show:   { opacity: 1, x: 0, width: 'auto', transition: { type: 'spring' as const, stiffness: 400, damping: 38, delay: 0.03 } },
 };
 
-// ─── profile modal ────────────────────────────────────────────────────────────
-
+// profile modal
 function ProfileModal({ onClose, isDark }: { onClose: () => void; isDark: boolean }) {
   const { user } = useAuthStore();
   const t = tok(isDark);
@@ -127,8 +125,7 @@ function ProfileModal({ onClose, isDark }: { onClose: () => void; isDark: boolea
   );
 }
 
-// ─── nav item ─────────────────────────────────────────────────────────────────
-
+// nav item
 interface NavItemProps {
   to: string; icon: React.ReactNode; label: string;
   exact?: boolean; open: boolean; isDark: boolean;
@@ -172,8 +169,7 @@ function NavItem({ to, icon, label, exact, open, isDark }: NavItemProps) {
   );
 }
 
-// ─── sidebar ──────────────────────────────────────────────────────────────────
-
+// sidebar
 export function Sidebar() {
   const { sidebarOpen, toggleSidebar, theme } = useUIStore();
   const { logout, user } = useAuthStore();
@@ -198,7 +194,7 @@ export function Sidebar() {
       >
         <div className="flex h-full flex-col overflow-hidden rounded-[28px]" style={glass(isDark, { height: '100%' })}>
 
-          {/* ── Brand ───────────────────────────────────────────────── */}
+          {/* Brand */}
           <div className={cn('px-4 pt-5 pb-4', sidebarOpen ? 'flex items-center justify-between' : 'flex flex-col items-center gap-3')}>
             <Link to="/" className={cn('flex items-center gap-3 min-w-0', !sidebarOpen && 'flex-col gap-2')}>
               <motion.div
@@ -238,7 +234,7 @@ export function Sidebar() {
             </motion.button>
           </div>
 
-          {/* ── Nav ─────────────────────────────────────────────────── */}
+          {/* Nav */}
           <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2.5 pb-2 scrollbar-thin space-y-0.5">
 
             {/* Main nav */}
@@ -257,7 +253,7 @@ export function Sidebar() {
             <NavItem to="/settings" icon={<Settings size={16} />} label="الإعدادات" open={sidebarOpen} isDark={isDark} />
           </nav>
 
-          {/* ── Profile + Logout ─────────────────────────────────────── */}
+          {/* Profile + Logout */}
           <div className="px-2.5 pb-3 space-y-1">
 
             {/* Profile row */}

@@ -48,7 +48,7 @@ fn save_pdf_to_downloads(html_content: String, filename: String) -> Result<Strin
 
     let mut pdf_ok = false;
 
-    // ── CDP: launch browser headless, connect via WebSocket, printToPDF ─────────
+    // CDP: launch browser headless, connect via WebSocket, printToPDF
     'cdp: for exe in &browser_paths {
         if !std::path::Path::new(exe).exists() { continue; }
 

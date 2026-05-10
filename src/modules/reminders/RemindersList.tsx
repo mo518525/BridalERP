@@ -34,7 +34,7 @@ const PRIORITY_OPTIONS = [
   { value: 'high', label: 'مرتفع' }, { value: 'urgent', label: 'عاجل' },
 ];
 
-// ─── Table layout ─────────────────────────────────────────────────────────────
+// Table layout
 const REMINDERS_COLS = 'auto 2fr 0.8fr 0.8fr 1fr auto';
 const REMINDERS_HDR: React.CSSProperties = {
   gridTemplateColumns: REMINDERS_COLS,

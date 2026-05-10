@@ -47,7 +47,7 @@ function fmtPay(val: number, curr: string): string {
 }
 
 
-// ─── Table layout ─────────────────────────────────────────────────────────────
+// Table layout
 // cols: العميل | الهاتف | الفستان | المقاس | الفترة | السعر | مستحق | الحالة | actions
 const RENTALS_COLS = 'repeat(8, 1fr) 120px';
 const RENTALS_HDR: React.CSSProperties = {
@@ -61,8 +61,7 @@ const RENTALS_HDR: React.CSSProperties = {
   whiteSpace: 'nowrap' as const,
 };
 
-// ─── Status legend ────────────────────────────────────────────────────────────
-
+// Status legend
 const FILTER_OPTIONS = [
   { key: '',              label: 'الكل',              desc: '',                             color: 'rgba(255,255,255,0.55)', bg: 'rgba(255,255,255,0.06)' },
   { key: 'active',        label: 'نشط',               desc: 'الفستان عند العميل',           color: '#4ade80',               bg: 'rgba(74,222,128,0.12)'  },
@@ -156,7 +155,7 @@ export function RentalsList() {
     finally { setReturnLoading(false); }
   };
 
-  // ── Client-side filtering ──────────────────────────────────────────────────
+  // Client-side filtering
   const filtered = useMemo(() => {
     let result = rentals;
     const q = search.trim().toLowerCase();
@@ -195,7 +194,7 @@ export function RentalsList() {
 
   return (
     <div className="space-y-5">
-      {/* ── Header ──────────────────────────────────────────────────── */}
+      {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 400, damping: 40 }}
         className="flex items-center gap-3 flex-wrap">
@@ -220,7 +219,7 @@ export function RentalsList() {
         </div>
       </motion.div>
 
-      {/* ── Status legend ────────────────────────────────────────────── */}
+      {/* Status legend */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.06 }}
         className="flex flex-wrap gap-2">
         {FILTER_OPTIONS.map((opt) => {
@@ -250,7 +249,7 @@ export function RentalsList() {
         })}
       </motion.div>
 
-      {/* ── Smart search bar ─────────────────────────────────────────── */}
+      {/* Smart search bar */}
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
         className="flex flex-wrap gap-2 items-center">
         {/* Text search */}
@@ -277,7 +276,7 @@ export function RentalsList() {
         )}
       </motion.div>
 
-      {/* ── Table ────────────────────────────────────────────────────── */}
+      {/* Table */}
       {loading ? (
         <div className="flex justify-center py-20">
           <Loader2 size={32} className="animate-spin" style={{ color: '#c9a84c' }} />
@@ -382,7 +381,7 @@ export function RentalsList() {
         </div>
       )}
 
-      {/* ── Open sales (unpaid) ─────────────────────────────────────── */}
+      {/* Open sales (unpaid) */}
       {openSales.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.10, type: 'spring', stiffness: 400, damping: 38 }}>
           <div className="flex items-center gap-2 mb-3">
@@ -438,10 +437,10 @@ export function RentalsList() {
         </motion.div>
       )}
 
-      {/* ── Rental form popup ───────────────────────────────────────── */}
+      {/* Rental form popup */}
       <RentalForm open={showForm} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />
 
-      {/* ── Settle payment modal ────────────────────────────────────── */}
+      {/* Settle payment modal */}
       {settling && (
         <Modal open onClose={() => setSettling(null)} title="تسوية الدفع" size="sm"
           footer={
@@ -533,7 +532,7 @@ export function RentalsList() {
         </Modal>
       )}
 
-      {/* ── Return confirm ──────────────────────────────────────────── */}
+      {/* Return confirm */}
       {returning && (
         <Modal open onClose={() => { setReturning(null); setCleanerName(''); }} title="تأكيد الإرجاع" size="sm"
           footer={

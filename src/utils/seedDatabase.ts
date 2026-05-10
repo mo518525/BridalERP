@@ -2,7 +2,7 @@ import { api } from '../lib/api';
 
 export async function seedDatabase(onProgress: (msg: string) => void): Promise<void> {
 
-  // ── 1. Kunden ──────────────────────────────────────────────────────────────
+  // 1. Kunden
   onProgress('إنشاء العملاء...');
   const customerInputs = [
     { name: 'رنا محمد',    phone: '0912345678', address: 'دمشق - المزة',      notes: 'عميلة دائمة' },
@@ -23,7 +23,7 @@ export async function seedDatabase(onProgress: (msg: string) => void): Promise<v
   ];
   const customers = await Promise.all(customerInputs.map(c => api.customers.create(c)));
 
-  // ── 2. Kleider (alle Status vertreten) ────────────────────────────────────
+  // 2. Kleider (alle Status vertreten)
   onProgress('إنشاء الفساتين...');
   const dressInputs = [
     // available (für Verkauf & Vermietung)
@@ -55,7 +55,7 @@ export async function seedDatabase(onProgress: (msg: string) => void): Promise<v
   ];
   const dresses = await Promise.all(dressInputs.map(d => api.inventory.create(d)));
 
-  // ── 3. Aktive Vermietungen (Status: rented) ───────────────────────────────
+  // 3. Aktive Vermietungen (Status: rented)
   onProgress('تسجيل الإيجارات النشطة...');
   await api.transactions.createRental({
     customer_id: customers[2].id, dress_id: dresses[6].id,
@@ -83,7 +83,7 @@ export async function seedDatabase(onProgress: (msg: string) => void): Promise<v
     notes: 'مناسبة عائلية — تأخر الإرجاع',
   });
 
-  // ── 4. Abgeschlossene Vermietungen → Reinigung (cleaning) ─────────────────
+  // 4. Abgeschlossene Vermietungen → Reinigung (cleaning)
   onProgress('تسجيل المرتجعات وإرسال للتنظيف...');
   const ret1 = await api.transactions.createRental({
     customer_id: customers[7].id, dress_id: dresses[12].id,
@@ -109,7 +109,7 @@ export async function seedDatabase(onProgress: (msg: string) => void): Promise<v
     cleaner_name: 'مغسلة النخيل',
   });
 
-  // ── 5. Abgeschlossene Vermietungen → direkt verfügbar (completed) ──────────
+  // 5. Abgeschlossene Vermietungen → direkt verfügbar (completed)
   onProgress('تسجيل إيجارات مكتملة...');
   const ret3 = await api.transactions.createRental({
     customer_id: customers[1].id, dress_id: dresses[0].id,
@@ -122,12 +122,12 @@ export async function seedDatabase(onProgress: (msg: string) => void): Promise<v
     needs_cleaning: false,
   });
 
-  // ── 6. Reservierungen (reserved) ──────────────────────────────────────────
+  // 6. Reservierungen (reserved)
   onProgress('تسجيل الحجوزات...');
   await api.transactions.reserve(dresses[14].id, customers[5].id, 'حجز لحفل يوم 2026-06-01');
   await api.transactions.reserve(dresses[15].id, customers[10].id, 'حجز مسبق للعرس');
 
-  // ── 7. Verkäufe (sale) ────────────────────────────────────────────────────
+  // 7. Verkäufe (sale)
   onProgress('تسجيل المبيعات...');
   await api.transactions.createSale({
     customer_id: customers[0].id, dress_id: dresses[10].id,
@@ -150,7 +150,7 @@ export async function seedDatabase(onProgress: (msg: string) => void): Promise<v
     notes: 'مبيعة فاخرة — مدفوعة بالكامل',
   });
 
-  // ── 8. Ausgaben (expenses) ────────────────────────────────────────────────
+  // 8. Ausgaben (expenses)
   onProgress('إنشاء المصروفات...');
   const expenseInputs = [
     { category: 'rent',        amount: 500000,  description: 'إيجار المحل — مايو 2026',      date: '2026-05-01', recurring_type: 'monthly' as const },
@@ -171,7 +171,7 @@ export async function seedDatabase(onProgress: (msg: string) => void): Promise<v
   ];
   await Promise.all(expenseInputs.map(e => api.expenses.create({ ...e, currency: 'SYP', usd_to_syp_snapshot: 14000, usd_to_try_snapshot: 34 })));
 
-  // ── 9. Erinnerungen (reminders) ───────────────────────────────────────────
+  // 9. Erinnerungen (reminders)
   onProgress('إنشاء التذكيرات...');
   const reminderInputs = [
     { reminder_type: 'return',   title: 'إرجاع فستان هدى حسن',        date: '2026-05-10', priority: 'urgent', description: 'موعد إرجاع W007 — فندق الشام' },
@@ -191,7 +191,7 @@ export async function seedDatabase(onProgress: (msg: string) => void): Promise<v
   ];
   await Promise.all(reminderInputs.map(r => api.reminders.create(r as Parameters<typeof api.reminders.create>[0])));
 
-  // ── 10. Lieferungen (deliveries) ──────────────────────────────────────────
+  // 10. Lieferungen (deliveries)
   onProgress('إنشاء التوريدات...');
   await api.deliveries.create({
     delivery_number: 'DEL-2026-001',

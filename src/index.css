@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Base ─────────────────────────────────────────────────────────── */
+/* Base */
 
 @layer base {
   html {
@@ -33,7 +33,7 @@
   }
 }
 
-/* ── Utilities ────────────────────────────────────────────────────── */
+/* Utilities */
 
 @layer utilities {
   /* Scrollbar */
@@ -148,7 +148,7 @@
   }
 }
 
-/* ── Animations ───────────────────────────────────────────────────── */
+/* Animations */
 
 @keyframes gold-pulse {
   0%, 100% { box-shadow: 0 0 0 1px rgba(200,169,106,0.18), 0 4px 20px rgba(200,169,106,0.05); }
@@ -157,7 +157,7 @@
 .shimmer-border { animation: gold-pulse 3s ease-in-out infinite; }
 html:not(.dark) .shimmer-border { animation: none; box-shadow: none; }
 
-/* ── Print Styles ──────────────────────────────────────────────────── */
+/* Print Styles */
 
 @media print {
   body > * { display: none !important; }

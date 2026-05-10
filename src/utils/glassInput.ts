@@ -1,4 +1,4 @@
-﻿// ── Glass input fields ──────────────────────────────────────────────
+﻿// Glass input fields
 export const glassInput = [
   'w-full h-10 px-3 rounded-xl border border-white/14',
   'text-white/88 placeholder:text-white/30 text-sm',
@@ -28,7 +28,7 @@ export const glassTextarea = [
 
 export const glassLabel = 'text-sm font-medium text-white/55';
 
-// ── Glass panel (cards, rows, list items) ───────────────────────────
+// Glass panel (cards, rows, list items)
 export const glassPanelStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.05)',
   backdropFilter: 'blur(16px) saturate(148%)',
@@ -43,7 +43,7 @@ export const glassPanelHoverStyle: React.CSSProperties = {
   boxShadow: '0 0 24px rgba(201,168,76,0.12), 0 8px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)',
 };
 
-// ── Inner row (inside modals, cards) ────────────────────────────────
+// Inner row (inside modals, cards)
 export const glassRowStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.05)',
   backdropFilter: 'blur(16px) saturate(148%)',

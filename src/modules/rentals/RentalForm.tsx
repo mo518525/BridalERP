@@ -50,8 +50,7 @@ function toAllCurrencies(amount: number, from: Currency, rates: { usd_to_syp: nu
   return { syp, usd, tryAmount };
 }
 
-// ─── Currency picker ──────────────────────────────────────────────────────────
-
+// Currency picker
 function CurrencyPicker({ value, onChange, isDark }: {
   value: Currency; onChange: (c: Currency) => void; isDark: boolean;
 }) {
@@ -74,8 +73,7 @@ function CurrencyPicker({ value, onChange, isDark }: {
   );
 }
 
-// ─── Dress combobox ───────────────────────────────────────────────────────────
-
+// Dress combobox
 function DressCombobox({ dresses, loadError, value, onSelect, isDark, error }: {
   dresses: Dress[]; loadError: boolean; value: string;
   onSelect: (d: Dress | null) => void; isDark: boolean; error?: string;
@@ -244,8 +242,7 @@ function DressRow({ dress, isDark, onSelect }: { dress: Dress; isDark: boolean; 
   );
 }
 
-// ─── Main form ────────────────────────────────────────────────────────────────
-
+// Main form
 export function RentalForm({ open, onClose, onSaved }: Props) {
   const { addToast, theme, exchangeRates } = useUIStore();
   const { user } = useAuthStore();

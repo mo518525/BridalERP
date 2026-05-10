@@ -253,7 +253,7 @@ interface DressCardProps {
   onDelete?: () => void; onCleaningDone?: () => void; onHistory: () => void;
 }
 
-// ─── Dress History Modal ──────────────────────────────────────────────────────
+// Dress History Modal
 function DressHistoryModal({ dress, onClose }: { dress: Dress; onClose: () => void }) {
   const { language, theme } = useUIStore();
   const isDark = theme === 'dark';
@@ -458,7 +458,7 @@ function DressHistoryModal({ dress, onClose }: { dress: Dress; onClose: () => vo
   );
 }
 
-// ─── DressCard ────────────────────────────────────────────────────────────────
+// DressCard
 function DressCard({ dress, currency, isDark, onView, onEdit, onDelete, onCleaningDone, onHistory }: DressCardProps) {
   const { language } = useUIStore();
   const { t } = useTranslation();

@@ -49,8 +49,7 @@ function fromSYP(syp: number, to: Currency, rates: { usd_to_syp: number; usd_to_
   return usd * rates.usd_to_try;
 }
 
-// ─── Currency picker ──────────────────────────────────────────────────────────
-
+// Currency picker
 function CurrencyPicker({ value, onChange, isDark }: {
   value: Currency; onChange: (c: Currency) => void; isDark: boolean;
 }) {
@@ -83,8 +82,7 @@ function CurrencyPicker({ value, onChange, isDark }: {
   );
 }
 
-// ─── Dress combobox ───────────────────────────────────────────────────────────
-
+// Dress combobox
 function DressCombobox({ dresses, loadError, value, onSelect, isDark, error }: {
   dresses: Dress[];
   loadError: boolean;
@@ -297,8 +295,7 @@ function DressRow({ dress, isDark, onSelect }: { dress: Dress; isDark: boolean; 
   );
 }
 
-// ─── Main form ────────────────────────────────────────────────────────────────
-
+// Main form
 const PAYMENT_OPTIONS = [
   { value: 'cash', label: 'نقدي' },
   { value: 'shamcash', label: 'شام كاش' },

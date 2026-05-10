@@ -15,8 +15,7 @@ import type { ActivityLog, HomeSummary, Reminder, Transaction } from '../../type
 import { ConfirmDialog, Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 
-// ─── Glass helper ─────────────────────────────────────────────────────────────
-
+// Glass helper
 function glass(isDark: boolean, extra?: React.CSSProperties): React.CSSProperties {
   return {
     background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.34)',
@@ -39,8 +38,7 @@ const DressIcon = ({ size = 22 }: { size?: number }) => (
   </svg>
 );
 
-// ─── Stat chip ────────────────────────────────────────────────────────────────
-
+// Stat chip
 function StatChip({ label, value, color, isDark }: {
   label: string; value: string | number; color: string; isDark: boolean;
 }) {
@@ -59,8 +57,7 @@ function StatChip({ label, value, color, isDark }: {
   );
 }
 
-// ─── Action card ──────────────────────────────────────────────────────────────
-
+// Action card
 interface CardDef {
   title: string; icon: React.ReactNode;
   action: 'link' | 'popup'; to?: string; popupKey?: 'sale' | 'rental';
@@ -104,8 +101,7 @@ function ActionCard({ card, isDark, onPopup }: {
   return <Link to={card.to!} className="block">{inner}</Link>;
 }
 
-// ─── Reminder types ───────────────────────────────────────────────────────────
-
+// Reminder types
 const PRIORITY_COLOR: Record<string, string> = {
   urgent: '#e05252', high: '#e09a52', normal: '#c9a84c', low: 'rgba(255,255,255,0.40)',
 };
@@ -150,8 +146,7 @@ function fmtPay(val: number, curr: string): string {
   return `${r.toLocaleString('en-US', { maximumFractionDigits: curr === 'SYP' ? 0 : 2 })} ${DISP_LABELS[curr] ?? curr}`;
 }
 
-// ─── Activity log helpers ─────────────────────────────────────────────────────
-
+// Activity log helpers
 type ActivityLabelKey =
   | 'sale'
   | 'rental'
@@ -394,8 +389,7 @@ function matchesSmartDateFilter(value: string, query: string) {
   return dateTokens.some((token) => token.includes(q));
 }
 
-// ─── Detail drawer ────────────────────────────────────────────────────────────
-
+// Detail drawer
 function DetailRow({ label, value, color }: { label: string; value: React.ReactNode; color?: string }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2"
@@ -461,8 +455,7 @@ function DetailPanel({ title, onClose, children, isDark }: {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
+// Page
 export function Homepage() {
   const { theme, language, addToast, remindersRefreshKey, bumpReminders, exchangeRates } = useUIStore();
   const isDark = theme === 'dark';
@@ -691,7 +684,7 @@ export function Homepage() {
     });
   }, [reminders, reminderTypeFilter, reminderTimeFilter, reminderSearch]);
 
-  // ── Filtered logs ────────────────────────────────────────────────────────────
+  // Filtered logs
   const filteredLogs = useMemo(() => {
     let result = visibleLogs;
 
@@ -753,7 +746,7 @@ export function Homepage() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.22 }} className="space-y-6">
 
-      {/* ── Stats bar ───────────────────────────────────────────────── */}
+      {/* Stats bar */}
       {summary && (
         <motion.div
           initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
@@ -770,7 +763,7 @@ export function Homepage() {
         </motion.div>
       )}
 
-      {/* ── Action cards ────────────────────────────────────────────── */}
+      {/* Action cards */}
       <motion.div
         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.08, type: 'spring', stiffness: 420, damping: 36 }}
@@ -781,7 +774,7 @@ export function Homepage() {
         ))}
       </motion.div>
 
-      {/* ── Reminders ───────────────────────────────────────────────── */}
+      {/* Reminders */}
       <motion.section
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.14, type: 'spring', stiffness: 420, damping: 36 }}
@@ -991,7 +984,7 @@ export function Homepage() {
         )}
       </motion.section>
 
-      {/* ── Activity log ────────────────────────────────────────────── */}
+      {/* Activity log */}
       <motion.section
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.20, type: 'spring', stiffness: 420, damping: 36 }}
@@ -1157,11 +1150,11 @@ export function Homepage() {
         )}
       </motion.section>
 
-      {/* ── Popups ──────────────────────────────────────────────────── */}
+      {/* Popups */}
       <SaleForm open={showSale} onClose={() => setShowSale(false)} onSaved={() => { setShowSale(false); load(); }} />
       <RentalForm open={showRental} onClose={() => setShowRental(false)} onSaved={() => { setShowRental(false); load(); }} />
 
-      {/* ── Reminder detail ─────────────────────────────────────────── */}
+      {/* Reminder detail */}
       {selectedReminder && (() => {
         const typeMeta = REMINDER_TYPE_META[selectedReminder.reminder_type];
         return (
@@ -1212,7 +1205,7 @@ export function Homepage() {
         );
       })()}
 
-      {/* ── Return dress modal ──────────────────────────────────────── */}
+      {/* Return dress modal */}
       {returningReminder && (
         <Modal open onClose={() => setReturningReminder(null)} title="تأكيد الإرجاع" size="sm"
           footer={
@@ -1254,7 +1247,7 @@ export function Homepage() {
         </Modal>
       )}
 
-      {/* ── Cleaning complete modal ─────────────────────────────────── */}
+      {/* Cleaning complete modal */}
       {cleaningReminder && (
         <Modal open onClose={() => { setCleaningReminder(null); setCleaningDressId(null); }} title="إتمام التنظيف" size="sm"
           footer={
@@ -1284,7 +1277,7 @@ export function Homepage() {
         </Modal>
       )}
 
-      {/* ── Confirm done (non-payment) ──────────────────────────────── */}
+      {/* Confirm done (non-payment) */}
       <ConfirmDialog
         open={!!completingReminder}
         onClose={() => setCompletingReminder(null)}
@@ -1295,7 +1288,7 @@ export function Homepage() {
         confirmLabel="إنهاء"
       />
 
-      {/* ── Settle payment modal (full, with currency picker) ───────── */}
+      {/* Settle payment modal (full, with currency picker) */}
       {settleData && (
         <Modal open onClose={() => setSettleData(null)} title="تسوية الدفع" size="sm"
           footer={
@@ -1380,7 +1373,7 @@ export function Homepage() {
         </Modal>
       )}
 
-      {/* ── Activity log detail ──────────────────────────────────────── */}
+      {/* Activity log detail */}
       {selectedLog && (() => {
         const activityLabel = ACTIVITY_LABEL_META[resolveLogLabel(selectedLog)];
         const entity = ENTITY_META[selectedLog.entity_type];

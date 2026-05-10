@@ -12,24 +12,21 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { todayISO } from '../../utils/formatters';
 import type { FinancialReport, Transaction, Expense, Customer, Dress } from '../../types';
 
-// ── Date helpers ──────────────────────────────────────────────────────────────
-
+// Date helpers
 function firstOfMonth()    { const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 10); }
 function daysAgo(n: number){ const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); }
 function firstOfPrevMonth(){ const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-1); return d.toISOString().slice(0, 10); }
 function lastOfPrevMonth() { const d = new Date(); d.setDate(0); return d.toISOString().slice(0, 10); }
 function firstOfYear()     { return new Date().getFullYear() + '-01-01'; }
 
-// ── CSV ───────────────────────────────────────────────────────────────────────
-
+// CSV
 function buildCsv(rows: (string | number | null | undefined)[][]): string {
   return '﻿' + rows.map(r =>
     r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')
   ).join('\n');
 }
 
-// ── Labels ────────────────────────────────────────────────────────────────────
-
+// Labels
 const CAT_LABEL: Record<string, string>       = { rent:'إيجار', electricity:'كهرباء', salary:'رواتب', cleaning:'تنظيف', marketing:'تسويق', maintenance:'صيانة', other:'أخرى' };
 const STATUS_LABEL: Record<string, string>    = { available:'متاح', reserved:'محجوز', rented:'مؤجر', cleaning:'تنظيف', sold:'مباع' };
 const STATUS_COLOR: Record<string, string>    = { available:'#4ade80', reserved:'#fbbf24', rented:'#60a5fa', cleaning:'#c084fc', sold:'#f87171' };
@@ -38,8 +35,7 @@ const TX_STATUS_COLOR: Record<string, string> = { active:'#60a5fa', completed:'#
 const PAYMENT_LABEL: Record<string, string>   = { cash:'نقد', card:'بطاقة', transfer:'تحويل', shamcash:'شام كاش' };
 const REC_LABEL: Record<string, string>       = { none:'مرة', monthly:'شهري', weekly:'أسبوعي' };
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
+// Types
 type ReportType = 'financial' | 'transactions' | 'expenses' | 'inventory' | 'customers';
 
 interface InventoryStats { total: number; by_status: Record<string, number>; total_inventory_value: number; }
@@ -69,8 +65,7 @@ const DATE_PRESETS = [
   { label: 'هذه السنة',   getFrom: firstOfYear,       getTo: todayISO       },
 ];
 
-// ── CSV export ────────────────────────────────────────────────────────────────
-
+// CSV export
 async function exportToCsv(result: ReportResult, from: string, to: string, toast: ToastFn) {
   const base = `${from}_${to}`;
   let filename = '';
@@ -130,8 +125,7 @@ async function exportToCsv(result: ReportResult, from: string, to: string, toast
   }
 }
 
-// ── Preview table ─────────────────────────────────────────────────────────────
-
+// Preview table
 function PTable({ headers, rows, isDark }: { headers: string[]; rows: (string | number | React.ReactNode)[][]; isDark: boolean; }) {
   const gold   = '#c9a84c';
   const border = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(60,42,24,0.07)';
@@ -166,8 +160,7 @@ function PTable({ headers, rows, isDark }: { headers: string[]; rows: (string | 
   );
 }
 
-// ── Section heading ───────────────────────────────────────────────────────────
-
+// Section heading
 function SectionTitle({ n, title, count, isDark }: { n: number; title: string; count?: number; isDark: boolean }) {
   const textM = isDark ? 'rgba(255,255,255,0.85)' : 'rgba(55,38,18,0.88)';
   const textS = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
@@ -187,8 +180,7 @@ function SectionTitle({ n, title, count, isDark }: { n: number; title: string; c
   );
 }
 
-// ── Report previews ───────────────────────────────────────────────────────────
-
+// Report previews
 function FinancialPreview({ data, isDark }: { data: FinancialReport; isDark: boolean }) {
   const kpis = [
     { label: 'إيرادات المبيعات', value: data.sale_revenue,   color: '#c9a84c', icon: ShoppingBag },
@@ -382,8 +374,7 @@ function CustomersPreview({ data, isDark }: { data: Customer[]; isDark: boolean 
   );
 }
 
-// ── Print / PDF ───────────────────────────────────────────────────────────────
-
+// Print / PDF
 async function exportToPdf(result: ReportResult, from: string, to: string, activeDef: ReportDef, toast: ToastFn) {
   const getTableHtml = (headers: string[], rows: (string | number | null | undefined)[][]) => `
     <table><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
@@ -467,8 +458,7 @@ async function exportToPdf(result: ReportResult, from: string, to: string, activ
   }
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
+// Main component
 export function Reports() {
   const { theme, addToast } = useUIStore();
   const { canViewFinance, canExport } = usePermissions();
@@ -534,7 +524,7 @@ export function Reports() {
 
   return (
     <div className="space-y-5 pb-8">
-      {/* ── Header ─────────────────────────────────────────────────────── */}
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: textM, fontFamily: 'Cairo, sans-serif' }}>التقارير</h1>
@@ -558,7 +548,7 @@ export function Reports() {
         )}
       </div>
 
-      {/* ── Report type cards ───────────────────────────────────────────── */}
+      {/* Report type cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {REPORT_DEFS.map(def => {
           const Icon = def.icon;
@@ -592,7 +582,7 @@ export function Reports() {
         })}
       </div>
 
-      {/* ── Date controls (only when needed) ───────────────────────────── */}
+      {/* Date controls (only when needed) */}
       <AnimatePresence>
         {activeDef.needsDates && (
           <motion.div key="dates" initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }} exit={{ opacity:0, height:0 }} className="overflow-hidden">
@@ -630,7 +620,7 @@ export function Reports() {
         )}
       </AnimatePresence>
 
-      {/* ── Generate button ─────────────────────────────────────────────── */}
+      {/* Generate button */}
       <div className="flex items-center gap-3">
         <motion.button whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
           onClick={generate} disabled={loading}
@@ -648,7 +638,7 @@ export function Reports() {
         )}
       </div>
 
-      {/* ── Loading ─────────────────────────────────────────────────────── */}
+      {/* Loading */}
       {loading && (
         <div className="flex flex-col items-center py-20 gap-3">
           <Loader2 size={32} className="animate-spin" style={{ color: activeDef.color }} />
@@ -656,7 +646,7 @@ export function Reports() {
         </div>
       )}
 
-      {/* ── Preview panel ───────────────────────────────────────────────── */}
+      {/* Preview panel */}
       <AnimatePresence>
         {result && !loading && (
           <motion.div key={activeType}

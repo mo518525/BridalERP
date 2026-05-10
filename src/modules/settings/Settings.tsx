@@ -349,7 +349,7 @@ function ExchangeRatesSection() {
           </motion.button>
         </div>
 
-        {/* ── Currency calculator ─────────────────────────────────────── */}
+        {/* Currency calculator */}
         <div className="rounded-2xl p-4"
           style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
           <p className="text-xs font-bold text-gold-400/80 mb-3" style={{ fontFamily: 'Cairo, sans-serif' }}>

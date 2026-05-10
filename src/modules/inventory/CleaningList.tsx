@@ -87,7 +87,7 @@ export function CleaningList() {
 
   return (
     <div className="space-y-5">
-      {/* ── Header ────────────────────────────────────────────────── */}
+      {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 400, damping: 40 }}
         className="flex items-center gap-3 flex-wrap">
@@ -112,7 +112,7 @@ export function CleaningList() {
         </div>
       </motion.div>
 
-      {/* ── Status legend ──────────────────────────────────────────── */}
+      {/* Status legend */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.06 }}
         className="flex flex-wrap gap-2">
         {Object.entries(STATUS_META).map(([key, meta]) => (
@@ -131,7 +131,7 @@ export function CleaningList() {
         ))}
       </motion.div>
 
-      {/* ── Smart filter ───────────────────────────────────────────── */}
+      {/* Smart filter */}
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
         className="flex flex-wrap gap-2 items-center">
         <div className="relative flex-1 min-w-[200px]">
@@ -156,7 +156,7 @@ export function CleaningList() {
         )}
       </motion.div>
 
-      {/* ── List ───────────────────────────────────────────────────── */}
+      {/* List */}
       {loading ? (
         <div className="flex justify-center py-20">
           <Loader2 size={32} className="animate-spin" style={{ color: '#c9a84c' }} />

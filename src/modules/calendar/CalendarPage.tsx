@@ -69,8 +69,7 @@ const PRIORITY_COLOR: Record<string, string> = {
   urgent: '#e05252', high: '#e09a52', normal: '#c9a84c', low: 'rgba(150,150,150,0.7)',
 };
 
-// ─── Add Reminder Form (inline) ───────────────────────────────────────────────
-
+// Add Reminder Form (inline)
 function AddReminderForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const { addToast } = useUIStore();
   const [form, setForm] = useState({ reminder_type: 'pickup', title: '', description: '', date: todayISO(), priority: 'normal' });
@@ -107,8 +106,7 @@ function AddReminderForm({ onClose, onSaved }: { onClose: () => void; onSaved: (
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
-
+// Main page
 export function CalendarPage() {
   const { theme, language } = useUIStore();
   const { canDelete } = usePermissions();
@@ -161,7 +159,7 @@ export function CalendarPage() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.22 }} className="space-y-4">
 
-      {/* ── Header ───────────────────────────────────────────────────── */}
+      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.04, type: 'spring', stiffness: 440, damping: 38 }}
@@ -198,7 +196,7 @@ export function CalendarPage() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_300px]">
 
-        {/* ── Calendar Grid ─────────────────────────────────────────── */}
+        {/* Calendar Grid */}
         <motion.div
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08, type: 'spring', stiffness: 440, damping: 38 }}
@@ -251,7 +249,7 @@ export function CalendarPage() {
           </AnimatePresence>
         </motion.div>
 
-        {/* ── Right panel: Events + Reminders ───────────────────────── */}
+        {/* Right panel: Events + Reminders */}
         <motion.div
           initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.14, type: 'spring', stiffness: 440, damping: 38 }}
@@ -278,7 +276,7 @@ export function CalendarPage() {
 
           <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
 
-            {/* ── Reminders tab ─────────────────────────────────────── */}
+            {/* Reminders tab */}
             {tab === 'reminders' && (
               <>
                 <div className="flex items-center justify-between mb-2">
@@ -336,7 +334,7 @@ export function CalendarPage() {
               </>
             )}
 
-            {/* ── Events tab ────────────────────────────────────────── */}
+            {/* Events tab */}
             {tab === 'events' && (
               <>
                 {!selected && (
