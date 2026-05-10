@@ -193,3 +193,19 @@ export interface CalendarEvent {
   dress_code?: string;
   priority?: string;
 }
+
+export interface Announcement {
+  id: string;
+  title: string;
+  body?: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface EmployeeTodo {
+  id: string;
+  user_id: string;
+  text: string;
+  done: boolean;
+  created_at: string;
+}
