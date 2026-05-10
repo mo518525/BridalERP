@@ -268,6 +268,15 @@ fn main() {
             commands::deliveries::delete_delivery,
             // Calendar
             commands::calendar::get_calendar_events,
+            // Announcements
+            commands::announcements::get_announcements,
+            commands::announcements::create_announcement,
+            commands::announcements::delete_announcement,
+            // Todos
+            commands::todos::get_todos,
+            commands::todos::create_todo,
+            commands::todos::toggle_todo,
+            commands::todos::delete_todo,
             // Exports
             save_to_downloads,
             save_pdf_to_downloads,
