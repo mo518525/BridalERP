@@ -322,3 +322,21 @@ pub struct HomeSummary {
     pub today_revenue: f64,
     pub today_transactions: i64,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Announcement {
+    pub id: String,
+    pub title: String,
+    pub body: Option<String>,
+    pub created_by: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EmployeeTodo {
+    pub id: String,
+    pub user_id: String,
+    pub text: String,
+    pub done: bool,
+    pub created_at: String,
+}
