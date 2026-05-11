@@ -12,7 +12,7 @@ import { api } from '../../lib/api';
 import { SaleForm } from '../sales/SaleForm';
 import { RentalForm } from '../rentals/RentalForm';
 import { formatCurrency, formatDate, formatDateTime, isOverdue } from '../../utils/formatters';
-import type { ActivityLog, HomeSummary, Reminder, Transaction } from '../../types';
+import type { ActivityLog, HomeSummary, Reminder, Transaction, User } from '../../types';
 import { ConfirmDialog, Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 
@@ -497,11 +497,13 @@ export function Homepage() {
   const [logDateQuery, setLogDateQuery] = useState('');
   const [logLabel, setLogLabel] = useState<ActivityLabelKey | ''>('');
   const [logQuick, setLogQuick] = useState<QuickRange>('all');
+  const [usersList, setUsersList] = useState<User[]>([]);
   const demoLogs = useMemo(() => createDemoActivityLogs(), []);
 
   const load = () => {
     api.home.getSummary().then(setSummary).catch(() => null);
     api.reminders.getAll(undefined).then(setReminders).catch(() => null);
+    api.auth.getUsers().then(setUsersList).catch(() => null);
     setLogsLoading(true);
     api.activity.getLog(300).then(setLogs).catch(() => null).finally(() => setLogsLoading(false));
   };
@@ -1383,86 +1385,215 @@ export function Homepage() {
         let parsedMeta: Record<string, unknown> | null = null;
         try { if (selectedLog.metadata) parsedMeta = JSON.parse(selectedLog.metadata); } catch {}
 
-        // Arabic labels for known metadata keys
-        const META_LABELS: Record<string, string> = {
-          customer_name: 'العميل', customer_phone: 'هاتف العميل',
-          dress_code: 'كود الفستان', code: 'الكود',
+        const PRICE_KEYS  = new Set(['price','deposit','remaining','amount','total_cost']);
+        const DATE_KEYS   = new Set(['rental_start','rental_end','return_date']);
+        const HIDDEN_KEYS = new Set(['id','user_id','dress_id','transaction_id','customer_id',
+          'customer_name','customer_phone','dress_code','code','employee_name','cleaner_name','supplier',
+          'color','size','style','notes']);
+        const MONEY_KEYS  = new Set([...PRICE_KEYS]);
+
+        const SECTION_LABELS: Record<string, string> = {
           price: 'السعر', deposit: 'العربون', remaining: 'المتبقي',
           amount: 'المبلغ', total_cost: 'الكلفة الإجمالية',
           currency: 'العملة', payment_method: 'طريقة الدفع',
           rental_start: 'تاريخ الاستلام', rental_end: 'تاريخ الإرجاع',
-          return_date: 'تاريخ الإرجاع الفعلي',
-          status: 'الحالة', notes: 'ملاحظات',
-          cleaner_name: 'المنظف', supplier: 'المورد',
-          employee_name: 'الموظف', color: 'اللون',
-          size: 'المقاس', style: 'الطراز',
+          return_date: 'تاريخ الإرجاع الفعلي', status: 'الحالة',
         };
-        const PRICE_KEYS = new Set(['price','deposit','remaining','amount','total_cost']);
-        const DATE_KEYS  = new Set(['rental_start','rental_end','return_date']);
-        const HIDDEN_KEYS = new Set(['id','user_id','dress_id','transaction_id','customer_id']);
 
-        // Extract dress code from description text (e.g. W033, D12)
+        const m = parsedMeta ?? {};
+        const metaStr = (k: string) => m[k] != null && m[k] !== '' ? String(m[k]) : null;
+
+        // Extract dress code
         const descDressCode = selectedLog.description.match(/\b([A-Z]\d+)\b/)?.[1];
-        const metaHasDressCode = !!(parsedMeta?.dress_code || parsedMeta?.code);
+        const dressCode = metaStr('dress_code') ?? metaStr('code')
+          ?? (selectedLog.entity_type === 'dress' ? (selectedLog.entity_id ?? null) : null)
+          ?? descDressCode ?? null;
+
+        // Real user display name
+        const realUser = usersList.find(u => u.id === selectedLog.user_id);
+        const displayUser = realUser?.name ?? selectedLog.user_name ?? null;
+
+        // Remaining metadata entries (after extracting the above special fields)
+        const extraEntries = Object.entries(m).filter(([k, v]) =>
+          !HIDDEN_KEYS.has(k) && v !== null && v !== '');
+
+        const rowBase: React.CSSProperties = {
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+          padding: '7px 10px', borderRadius: 10,
+          background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(60,42,24,0.04)',
+        };
+        const labelSt: React.CSSProperties = {
+          fontFamily: 'Cairo, sans-serif', fontSize: '0.75rem', flexShrink: 0,
+          color: isDark ? 'rgba(255,255,255,0.40)' : 'rgba(60,42,24,0.42)',
+        };
+        const valueSt: React.CSSProperties = {
+          fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem', fontWeight: 600, textAlign: 'end',
+          color: isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.88)',
+        };
+
+        function MetaRow({ label, children }: { label: string; children: React.ReactNode }) {
+          return (
+            <div style={rowBase}>
+              <span style={labelSt}>{label}</span>
+              <span style={valueSt}>{children}</span>
+            </div>
+          );
+        }
+
+        const sectionTitle = (t: string) => (
+          <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em',
+            color: isDark ? 'rgba(255,255,255,0.28)' : 'rgba(60,42,24,0.30)', marginBottom: 5, marginTop: 14, textTransform: 'uppercase' }}>
+            {t}
+          </p>
+        );
+
+        const hasParties   = !!(metaStr('customer_name') || metaStr('employee_name') || metaStr('cleaner_name') || metaStr('supplier') || dressCode);
+        const hasFinancial = extraEntries.some(([k]) => MONEY_KEYS.has(k) || k === 'currency' || k === 'payment_method');
+        const hasDates     = extraEntries.some(([k]) => DATE_KEYS.has(k));
+        const hasOther     = extraEntries.some(([k]) => !MONEY_KEYS.has(k) && !DATE_KEYS.has(k) && k !== 'currency' && k !== 'payment_method');
 
         return (
           <DetailPanel title="تفاصيل النشاط" onClose={() => setSelectedLog(null)} isDark={isDark}>
-            {/* Badges */}
-            <div className="flex items-center gap-2 mb-4">
+
+            {/* Type badges */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
               <span className="text-xs font-bold px-2.5 py-1 rounded-full"
                 style={{ background: activityLabel.bg, color: activityLabel.color, fontFamily: 'Cairo, sans-serif' }}>
                 {activityLabel.label}
               </span>
               {entity && (
-                <span className="flex items-center gap-1 text-xs"
-                  style={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(60,42,24,0.45)', fontFamily: 'Cairo, sans-serif' }}>
+                <span className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-full"
+                  style={{ background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(60,42,24,0.06)',
+                    color: isDark ? 'rgba(255,255,255,0.50)' : 'rgba(60,42,24,0.50)', fontFamily: 'Cairo, sans-serif' }}>
                   {entity.icon} {entity.label}
                 </span>
               )}
             </div>
 
             {/* Description */}
-            <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.875rem',
-              color: isDark ? 'rgba(255,255,255,0.82)' : 'rgba(55,38,18,0.82)',
-              marginBottom: 14, lineHeight: 1.65 }}>
-              {selectedLog.description}
-            </p>
+            <div style={{ padding: '10px 12px', borderRadius: 12, marginBottom: 2,
+              background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(60,42,24,0.04)',
+              border: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(60,42,24,0.07)' }}>
+              <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.875rem',
+                color: isDark ? 'rgba(255,255,255,0.84)' : 'rgba(55,38,18,0.84)', lineHeight: 1.65, margin: 0 }}>
+                {selectedLog.description}
+              </p>
+            </div>
 
-            {/* Dress code — show entity_id for dress entity (it IS the code) */}
-            {selectedLog.entity_type === 'dress' && selectedLog.entity_id && (
-              <DetailRow label="كود الفستان" value={
-                <span style={{ fontWeight: 700, color: '#c9a84c', fontFamily: 'monospace' }}>{selectedLog.entity_id}</span>
-              } />
+            {/* Parties section */}
+            {hasParties && (
+              <>
+                {sectionTitle('الأطراف')}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {metaStr('customer_name') && (
+                    <MetaRow label="العميل">
+                      <span style={{ fontWeight: 700 }}>{metaStr('customer_name')}</span>
+                    </MetaRow>
+                  )}
+                  {metaStr('customer_phone') && (
+                    <MetaRow label="هاتف العميل">{metaStr('customer_phone')}</MetaRow>
+                  )}
+                  {metaStr('employee_name') && (
+                    <MetaRow label="الموظف">{metaStr('employee_name')}</MetaRow>
+                  )}
+                  {metaStr('cleaner_name') && (
+                    <MetaRow label="المنظف">{metaStr('cleaner_name')}</MetaRow>
+                  )}
+                  {metaStr('supplier') && (
+                    <MetaRow label="المورد">{metaStr('supplier')}</MetaRow>
+                  )}
+                  {dressCode && (
+                    <MetaRow label="كود الفستان">
+                      <span style={{ color: '#c9a84c', fontFamily: 'monospace', fontWeight: 700 }}>{dressCode}</span>
+                    </MetaRow>
+                  )}
+                  {(metaStr('color') || metaStr('size') || metaStr('style')) && (
+                    <MetaRow label="مواصفات الفستان">
+                      <span style={{ color: isDark ? 'rgba(255,255,255,0.70)' : 'rgba(55,38,18,0.70)' }}>
+                        {[metaStr('color'), metaStr('size'), metaStr('style')].filter(Boolean).join(' · ')}
+                      </span>
+                    </MetaRow>
+                  )}
+                </div>
+              </>
             )}
-            {/* For transactions/other — extract dress code from description if not in metadata */}
-            {selectedLog.entity_type !== 'dress' && descDressCode && !metaHasDressCode && (
-              <DetailRow label="كود الفستان" value={
-                <span style={{ fontWeight: 700, color: '#c9a84c', fontFamily: 'monospace' }}>{descDressCode}</span>
-              } />
+
+            {/* Financial section */}
+            {hasFinancial && (
+              <>
+                {sectionTitle('المالية')}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {extraEntries.filter(([k]) => MONEY_KEYS.has(k)).map(([k, v]) => (
+                    <MetaRow key={k} label={SECTION_LABELS[k] ?? k}>
+                      <span style={{ color: '#4ade80', fontWeight: 700 }}>{String(v)}</span>
+                    </MetaRow>
+                  ))}
+                  {metaStr('currency') && (
+                    <MetaRow label="العملة">{metaStr('currency')}</MetaRow>
+                  )}
+                  {metaStr('payment_method') && (
+                    <MetaRow label="طريقة الدفع">{metaStr('payment_method')}</MetaRow>
+                  )}
+                </div>
+              </>
             )}
 
-            {/* Metadata — mapped to Arabic, formatted by key type */}
-            {parsedMeta && Object.entries(parsedMeta)
-              .filter(([k]) => !HIDDEN_KEYS.has(k) && parsedMeta![k] !== null && parsedMeta![k] !== '')
-              .map(([k, v]) => {
-                const label = META_LABELS[k] ?? k;
-                const raw   = String(v);
-                let node: React.ReactNode = raw;
-                if (k === 'customer_name')       node = <span style={{ fontWeight: 700 }}>{raw}</span>;
-                else if (k === 'dress_code' || k === 'code')
-                  node = <span style={{ fontWeight: 700, color: '#c9a84c', fontFamily: 'monospace' }}>{raw}</span>;
-                else if (PRICE_KEYS.has(k))       node = <span style={{ fontWeight: 700, color: '#4ade80' }}>{raw}</span>;
-                else if (DATE_KEYS.has(k))        node = <span style={{ fontFamily: 'monospace' }}>{raw.slice(0, 10)}</span>;
-                return <DetailRow key={k} label={label} value={node} />;
-              })}
-
-            {/* User */}
-            {selectedLog.user_name && (
-              <DetailRow label="المستخدم" value={selectedLog.user_name} />
+            {/* Dates section */}
+            {hasDates && (
+              <>
+                {sectionTitle('التواريخ')}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {extraEntries.filter(([k]) => DATE_KEYS.has(k)).map(([k, v]) => (
+                    <MetaRow key={k} label={SECTION_LABELS[k] ?? k}>
+                      <span style={{ fontFamily: 'monospace' }}>{String(v).slice(0, 10)}</span>
+                    </MetaRow>
+                  ))}
+                </div>
+              </>
             )}
 
-            {/* Time */}
-            <DetailRow label="الوقت" value={formatDateTime(selectedLog.created_at, language)} />
+            {/* Other metadata */}
+            {hasOther && (
+              <>
+                {sectionTitle('تفاصيل أخرى')}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {extraEntries
+                    .filter(([k]) => !MONEY_KEYS.has(k) && !DATE_KEYS.has(k) && k !== 'currency' && k !== 'payment_method')
+                    .map(([k, v]) => (
+                      <MetaRow key={k} label={SECTION_LABELS[k] ?? k}>{String(v)}</MetaRow>
+                    ))}
+                </div>
+              </>
+            )}
+
+            {/* Notes */}
+            {metaStr('notes') && (
+              <>
+                {sectionTitle('ملاحظات')}
+                <div style={{ padding: '8px 10px', borderRadius: 10,
+                  background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(60,42,24,0.04)',
+                  fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem',
+                  color: isDark ? 'rgba(255,255,255,0.68)' : 'rgba(55,38,18,0.68)', lineHeight: 1.55 }}>
+                  {metaStr('notes')}
+                </div>
+              </>
+            )}
+
+            {/* Footer: user + time */}
+            <div style={{ marginTop: 16, paddingTop: 10,
+              borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(60,42,24,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+              {displayUser && (
+                <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.75rem',
+                  color: isDark ? 'rgba(255,255,255,0.42)' : 'rgba(60,42,24,0.42)' }}>
+                  👤 <span style={{ fontWeight: 600, color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(55,38,18,0.65)' }}>{displayUser}</span>
+                </span>
+              )}
+              <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.75rem',
+                color: isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.38)' }}>
+                🕐 {formatDateTime(selectedLog.created_at, language)}
+              </span>
+            </div>
           </DetailPanel>
         );
       })()}
