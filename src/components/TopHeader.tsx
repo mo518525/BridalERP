@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bookmark, ChevronDown, Moon, Sun, Eye, EyeOff } from 'lucide-react';
+import { Bookmark, ChevronDown, Moon, Sun, Eye, EyeOff, ChevronRight } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useUIStore } from '../store/uiStore';
 import { useAuthStore } from '../store/authStore';
 import { api } from '../lib/api';
@@ -56,6 +57,9 @@ function iconBubble(isDark: boolean, color: string, extra?: React.CSSProperties)
 export function TopHeader() {
   const { theme, setTheme, hideFinancials, toggleHideFinancials } = useUIStore();
   const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const canGoBack = location.pathname !== '/';
 
   const [verseIdx, setVerseIdx] = useState(0);
   const [time, setTime] = useState(new Date());
@@ -140,6 +144,20 @@ export function TopHeader() {
       </AnimatePresence>
 
       <div className="flex items-start gap-5">
+        {/* Back button — shown on any page except home */}
+        {canGoBack && (
+          <motion.button
+            whileHover={hoverSoft(isDark)}
+            whileTap={{ scale: 0.93 }}
+            onClick={() => navigate(-1)}
+            title="رجوع"
+            className="relative rounded-full"
+            style={iconBubble(isDark, t.textMuted)}
+          >
+            <ChevronRight size={18} />
+          </motion.button>
+        )}
+
         <div className="px-2 pt-1 text-center" style={{ direction: 'ltr' }}>
           <p
             style={{

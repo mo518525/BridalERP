@@ -1385,14 +1385,14 @@ export function Homepage() {
         let parsedMeta: Record<string, unknown> | null = null;
         try { if (selectedLog.metadata) parsedMeta = JSON.parse(selectedLog.metadata); } catch {}
 
-        const PRICE_KEYS  = new Set(['price','deposit','remaining','amount','total_cost']);
-        const DATE_KEYS   = new Set(['rental_start','rental_end','return_date']);
-        const HIDDEN_KEYS = new Set(['id','user_id','dress_id','transaction_id','customer_id',
-          'customer_name','customer_phone','dress_code','code','employee_name','cleaner_name','supplier',
-          'color','size','style','notes']);
-        const MONEY_KEYS  = new Set([...PRICE_KEYS]);
-
-        const SECTION_LABELS: Record<string, string> = {
+        const PRICE_KEYS = new Set(['price','deposit','remaining','amount','total_cost']);
+        const DATE_KEYS  = new Set(['rental_start','rental_end','return_date']);
+        const ALL_KNOWN  = new Set([...PRICE_KEYS, ...DATE_KEYS,
+          'id','user_id','dress_id','transaction_id','customer_id',
+          'customer_name','customer_phone','dress_code','code',
+          'employee_name','cleaner_name','supplier',
+          'color','size','style','notes','currency','payment_method','status']);
+        const KEY_LABELS: Record<string, string> = {
           price: 'السعر', deposit: 'العربون', remaining: 'المتبقي',
           amount: 'المبلغ', total_cost: 'الكلفة الإجمالية',
           currency: 'العملة', payment_method: 'طريقة الدفع',
@@ -1401,198 +1401,118 @@ export function Homepage() {
         };
 
         const m = parsedMeta ?? {};
-        const metaStr = (k: string) => m[k] != null && m[k] !== '' ? String(m[k]) : null;
+        const get = (k: string) => (m[k] != null && m[k] !== '') ? String(m[k]) : null;
 
-        // Extract dress code
         const descDressCode = selectedLog.description.match(/\b([A-Z]\d+)\b/)?.[1];
-        const dressCode = metaStr('dress_code') ?? metaStr('code')
+        const dressCode = get('dress_code') ?? get('code')
           ?? (selectedLog.entity_type === 'dress' ? (selectedLog.entity_id ?? null) : null)
           ?? descDressCode ?? null;
 
-        // Real user display name
-        const realUser = usersList.find(u => u.id === selectedLog.user_id);
+        const realUser  = usersList.find(u => u.id === selectedLog.user_id);
         const displayUser = realUser?.name ?? selectedLog.user_name ?? null;
 
-        // Remaining metadata entries (after extracting the above special fields)
-        const extraEntries = Object.entries(m).filter(([k, v]) =>
-          !HIDDEN_KEYS.has(k) && v !== null && v !== '');
+        const extraEntries = Object.entries(m).filter(([k, v]) => !ALL_KNOWN.has(k) && v !== null && v !== '');
 
-        const rowBase: React.CSSProperties = {
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-          padding: '7px 10px', borderRadius: 10,
-          background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(60,42,24,0.04)',
+        const lbl: React.CSSProperties = {
+          fontFamily: 'Cairo, sans-serif', fontSize: '0.73rem', flexShrink: 0,
+          color: isDark ? 'rgba(255,255,255,0.36)' : 'rgba(60,42,24,0.38)',
         };
-        const labelSt: React.CSSProperties = {
-          fontFamily: 'Cairo, sans-serif', fontSize: '0.75rem', flexShrink: 0,
-          color: isDark ? 'rgba(255,255,255,0.40)' : 'rgba(60,42,24,0.42)',
-        };
-        const valueSt: React.CSSProperties = {
+        const val: React.CSSProperties = {
           fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem', fontWeight: 600, textAlign: 'end',
           color: isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.88)',
         };
-
-        function MetaRow({ label, children }: { label: string; children: React.ReactNode }) {
-          return (
-            <div style={rowBase}>
-              <span style={labelSt}>{label}</span>
-              <span style={valueSt}>{children}</span>
-            </div>
-          );
-        }
-
-        const sectionTitle = (t: string) => (
-          <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em',
-            color: isDark ? 'rgba(255,255,255,0.28)' : 'rgba(60,42,24,0.30)', marginBottom: 5, marginTop: 14, textTransform: 'uppercase' }}>
-            {t}
-          </p>
+        const rowSt: React.CSSProperties = {
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+          padding: '6px 0',
+          borderBottom: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(60,42,24,0.06)',
+        };
+        const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
+          <div style={rowSt}><span style={lbl}>{label}</span><span style={val}>{children}</span></div>
         );
-
-        const hasParties   = !!(metaStr('customer_name') || metaStr('employee_name') || metaStr('cleaner_name') || metaStr('supplier') || dressCode);
-        const hasFinancial = extraEntries.some(([k]) => MONEY_KEYS.has(k) || k === 'currency' || k === 'payment_method');
-        const hasDates     = extraEntries.some(([k]) => DATE_KEYS.has(k));
-        const hasOther     = extraEntries.some(([k]) => !MONEY_KEYS.has(k) && !DATE_KEYS.has(k) && k !== 'currency' && k !== 'payment_method');
 
         return (
           <DetailPanel title="تفاصيل النشاط" onClose={() => setSelectedLog(null)} isDark={isDark}>
 
-            {/* Type badges */}
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-                style={{ background: activityLabel.bg, color: activityLabel.color, fontFamily: 'Cairo, sans-serif' }}>
+            {/* Action + entity badges */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+              <span style={{
+                fontFamily: 'Cairo, sans-serif', fontSize: '0.9rem', fontWeight: 700,
+                padding: '4px 12px', borderRadius: 20,
+                background: activityLabel.bg, color: activityLabel.color,
+              }}>
                 {activityLabel.label}
               </span>
               {entity && (
-                <span className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-full"
-                  style={{ background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(60,42,24,0.06)',
-                    color: isDark ? 'rgba(255,255,255,0.50)' : 'rgba(60,42,24,0.50)', fontFamily: 'Cairo, sans-serif' }}>
+                <span style={{
+                  fontFamily: 'Cairo, sans-serif', fontSize: '0.75rem',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  color: isDark ? 'rgba(255,255,255,0.42)' : 'rgba(60,42,24,0.42)',
+                }}>
                   {entity.icon} {entity.label}
                 </span>
               )}
             </div>
 
-            {/* Description */}
-            <div style={{ padding: '10px 12px', borderRadius: 12, marginBottom: 2,
-              background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(60,42,24,0.04)',
-              border: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(60,42,24,0.07)' }}>
-              <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.875rem',
-                color: isDark ? 'rgba(255,255,255,0.84)' : 'rgba(55,38,18,0.84)', lineHeight: 1.65, margin: 0 }}>
-                {selectedLog.description}
-              </p>
-            </div>
-
-            {/* Parties section */}
-            {hasParties && (
-              <>
-                {sectionTitle('الأطراف')}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {metaStr('customer_name') && (
-                    <MetaRow label="العميل">
-                      <span style={{ fontWeight: 700 }}>{metaStr('customer_name')}</span>
-                    </MetaRow>
-                  )}
-                  {metaStr('customer_phone') && (
-                    <MetaRow label="هاتف العميل">{metaStr('customer_phone')}</MetaRow>
-                  )}
-                  {metaStr('employee_name') && (
-                    <MetaRow label="الموظف">{metaStr('employee_name')}</MetaRow>
-                  )}
-                  {metaStr('cleaner_name') && (
-                    <MetaRow label="المنظف">{metaStr('cleaner_name')}</MetaRow>
-                  )}
-                  {metaStr('supplier') && (
-                    <MetaRow label="المورد">{metaStr('supplier')}</MetaRow>
-                  )}
-                  {dressCode && (
-                    <MetaRow label="كود الفستان">
-                      <span style={{ color: '#c9a84c', fontFamily: 'monospace', fontWeight: 700 }}>{dressCode}</span>
-                    </MetaRow>
-                  )}
-                  {(metaStr('color') || metaStr('size') || metaStr('style')) && (
-                    <MetaRow label="مواصفات الفستان">
-                      <span style={{ color: isDark ? 'rgba(255,255,255,0.70)' : 'rgba(55,38,18,0.70)' }}>
-                        {[metaStr('color'), metaStr('size'), metaStr('style')].filter(Boolean).join(' · ')}
-                      </span>
-                    </MetaRow>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* Financial section */}
-            {hasFinancial && (
-              <>
-                {sectionTitle('المالية')}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {extraEntries.filter(([k]) => MONEY_KEYS.has(k)).map(([k, v]) => (
-                    <MetaRow key={k} label={SECTION_LABELS[k] ?? k}>
-                      <span style={{ color: '#4ade80', fontWeight: 700 }}>{String(v)}</span>
-                    </MetaRow>
-                  ))}
-                  {metaStr('currency') && (
-                    <MetaRow label="العملة">{metaStr('currency')}</MetaRow>
-                  )}
-                  {metaStr('payment_method') && (
-                    <MetaRow label="طريقة الدفع">{metaStr('payment_method')}</MetaRow>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* Dates section */}
-            {hasDates && (
-              <>
-                {sectionTitle('التواريخ')}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {extraEntries.filter(([k]) => DATE_KEYS.has(k)).map(([k, v]) => (
-                    <MetaRow key={k} label={SECTION_LABELS[k] ?? k}>
-                      <span style={{ fontFamily: 'monospace' }}>{String(v).slice(0, 10)}</span>
-                    </MetaRow>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* Other metadata */}
-            {hasOther && (
-              <>
-                {sectionTitle('تفاصيل أخرى')}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {extraEntries
-                    .filter(([k]) => !MONEY_KEYS.has(k) && !DATE_KEYS.has(k) && k !== 'currency' && k !== 'payment_method')
-                    .map(([k, v]) => (
-                      <MetaRow key={k} label={SECTION_LABELS[k] ?? k}>{String(v)}</MetaRow>
-                    ))}
-                </div>
-              </>
-            )}
-
-            {/* Notes */}
-            {metaStr('notes') && (
-              <>
-                {sectionTitle('ملاحظات')}
-                <div style={{ padding: '8px 10px', borderRadius: 10,
-                  background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(60,42,24,0.04)',
-                  fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem',
-                  color: isDark ? 'rgba(255,255,255,0.68)' : 'rgba(55,38,18,0.68)', lineHeight: 1.55 }}>
-                  {metaStr('notes')}
-                </div>
-              </>
-            )}
-
-            {/* Footer: user + time */}
-            <div style={{ marginTop: 16, paddingTop: 10,
-              borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(60,42,24,0.08)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
-              {displayUser && (
-                <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.75rem',
-                  color: isDark ? 'rgba(255,255,255,0.42)' : 'rgba(60,42,24,0.42)' }}>
-                  👤 <span style={{ fontWeight: 600, color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(55,38,18,0.65)' }}>{displayUser}</span>
-                </span>
+            {/* All fields as clean rows */}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {dressCode && (
+                <Row label="الفستان">
+                  <span style={{ color: '#c9a84c', fontFamily: 'monospace', fontWeight: 700 }}>{dressCode}</span>
+                </Row>
               )}
-              <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.75rem',
-                color: isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.38)' }}>
-                🕐 {formatDateTime(selectedLog.created_at, language)}
-              </span>
+              {get('customer_name') && (
+                <Row label="العميل"><span style={{ fontWeight: 700 }}>{get('customer_name')}</span></Row>
+              )}
+              {get('customer_phone') && <Row label="الهاتف">{get('customer_phone')}</Row>}
+              {get('employee_name')  && <Row label="الموظف">{get('employee_name')}</Row>}
+              {get('cleaner_name')   && <Row label="المنظف">{get('cleaner_name')}</Row>}
+              {get('supplier')       && <Row label="المورد">{get('supplier')}</Row>}
+              {(get('color') || get('size') || get('style')) && (
+                <Row label="المواصفات">
+                  {[get('color'), get('size'), get('style')].filter(Boolean).join(' · ')}
+                </Row>
+              )}
+              {get('status') && <Row label="الحالة">{get('status')}</Row>}
+              {/* Financial */}
+              {[...PRICE_KEYS].map(k => get(k) ? (
+                <Row key={k} label={KEY_LABELS[k]}>
+                  <span style={{ color: '#4ade80', fontWeight: 700 }}>{get(k)}</span>
+                </Row>
+              ) : null)}
+              {get('currency')       && <Row label="العملة">{get('currency')}</Row>}
+              {get('payment_method') && <Row label="طريقة الدفع">{get('payment_method')}</Row>}
+              {/* Dates */}
+              {[...DATE_KEYS].map(k => get(k) ? (
+                <Row key={k} label={KEY_LABELS[k]}>
+                  <span style={{ fontFamily: 'monospace' }}>{get(k)!.slice(0, 10)}</span>
+                </Row>
+              ) : null)}
+              {/* Extra unknown keys */}
+              {extraEntries.map(([k, v]) => (
+                <Row key={k} label={k}>{String(v)}</Row>
+              ))}
+              {/* Notes */}
+              {get('notes') && (
+                <div style={{ marginTop: 8, padding: '7px 0' }}>
+                  <p style={{ ...lbl, marginBottom: 4 }}>ملاحظات</p>
+                  <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem', lineHeight: 1.55,
+                    color: isDark ? 'rgba(255,255,255,0.68)' : 'rgba(55,38,18,0.68)', margin: 0 }}>
+                    {get('notes')}
+                  </p>
+                </div>
+              )}
+              {/* Date of action */}
+              <Row label="التاريخ">
+                <span style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>
+                  {formatDateTime(selectedLog.created_at, language)}
+                </span>
+              </Row>
+              {/* User who triggered */}
+              {displayUser && (
+                <Row label="بواسطة">
+                  <span style={{ fontWeight: 700 }}>{displayUser}</span>
+                </Row>
+              )}
             </div>
           </DetailPanel>
         );
