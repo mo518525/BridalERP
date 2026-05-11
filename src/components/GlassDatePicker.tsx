@@ -118,12 +118,15 @@ export function GlassDatePicker({
 
   const selectDate = (d: Date) => { if (isOff(d)) return; onChange(toDateStr(d)); setOpen(false); };
 
-  // ─── styles ───────────────────────────────────────────────────────────────
+  // ─── styles (match GlassSelect exactly) ──────────────────────────────────
+  const textMain  = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)';
+  const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.38)';
+
   const navBtnSt: React.CSSProperties = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     width: 26, height: 26, borderRadius: 8, border: 'none', cursor: 'pointer',
-    background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.60)',
-    color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(60,42,24,0.55)',
+    background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.50)',
+    color: textMuted,
     flexShrink: 0,
   };
 
@@ -137,14 +140,13 @@ export function GlassDatePicker({
         ? '1px solid rgba(201,168,76,0.55)'
         : isDark ? '1px solid rgba(255,255,255,0.14)' : '1px solid rgba(60,42,24,0.12)',
     borderRadius: 12,
-    color: value
-      ? (isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)')
-      : (isDark ? 'rgba(255,255,255,0.30)' : 'rgba(60,42,24,0.35)'),
+    color: value ? textMain : textMuted,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.55 : 1,
     transition: 'border-color 0.15s',
   };
 
+  // Same glass recipe as GlassSelect's dropdownStyle
   const popupSt: React.CSSProperties = {
     position: 'fixed',
     top: pos.top,
@@ -152,15 +154,15 @@ export function GlassDatePicker({
     width: pos.width,
     zIndex: 99999,
     background: isDark
-      ? 'linear-gradient(180deg, rgba(30,20,10,0.96) 0%, rgba(24,15,6,0.96) 100%)'
-      : 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,244,238,0.96) 100%)',
-    backdropFilter: 'blur(28px) saturate(160%)',
-    WebkitBackdropFilter: 'blur(28px) saturate(160%)',
-    border: isDark ? '1px solid rgba(255,255,255,0.14)' : '1px solid rgba(201,168,76,0.25)',
+      ? 'linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.045) 100%)'
+      : 'linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.68) 100%)',
+    backdropFilter: 'blur(26px) saturate(165%)',
+    WebkitBackdropFilter: 'blur(26px) saturate(165%)',
+    border: isDark ? '1px solid rgba(255,255,255,0.14)' : '1px solid rgba(255,255,255,0.82)',
     borderRadius: 18,
     boxShadow: isDark
-      ? '0 12px 28px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.07)'
-      : '0 8px 20px rgba(100,80,40,0.12), inset 0 1px 0 rgba(255,255,255,0.90)',
+      ? '0 8px 18px rgba(0,0,0,0.14), 0 0 0 0.5px rgba(255,255,255,0.03), inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.08)'
+      : '0 6px 14px rgba(122,122,122,0.05), inset 0 1px 0 rgba(255,255,255,0.86), inset 0 -1px 0 rgba(214,214,214,0.28)',
     padding: '10px 10px 8px',
   };
 
@@ -214,7 +216,7 @@ export function GlassDatePicker({
               {/* Month navigation */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <button type="button" onClick={prevMonth} style={navBtnSt}><ChevronRight size={12} /></button>
-                <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.84rem', fontWeight: 700, color: isDark ? 'rgba(255,255,255,0.90)' : 'rgba(55,38,18,0.90)' }}>
+                <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.84rem', fontWeight: 700, color: textMain }}>
                   {MONTHS[viewMonth]} {viewYear}
                 </span>
                 <button type="button" onClick={nextMonth} style={navBtnSt}><ChevronLeft size={12} /></button>
@@ -223,7 +225,7 @@ export function GlassDatePicker({
               {/* Weekday headers */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
                 {DAYS.map(d => (
-                  <div key={d} style={{ textAlign: 'center', fontSize: '0.64rem', fontFamily: 'Cairo, sans-serif', fontWeight: 600, color: isDark ? 'rgba(255,255,255,0.26)' : 'rgba(60,42,24,0.28)' }}>
+                  <div key={d} style={{ textAlign: 'center', fontSize: '0.64rem', fontFamily: 'Cairo, sans-serif', fontWeight: 600, color: textMuted }}>
                     {d}
                   </div>
                 ))}
@@ -259,9 +261,9 @@ export function GlassDatePicker({
                             : 'transparent',
                         boxShadow: isSelected ? '0 3px 8px rgba(201,168,76,0.30)' : 'none',
                         color: isSelected ? '#fff'
-                          : isOtherMon || isDisabled ? (isDark ? 'rgba(255,255,255,0.16)' : 'rgba(60,42,24,0.20)')
+                          : isOtherMon || isDisabled ? (isDark ? 'rgba(255,255,255,0.16)' : 'rgba(60,42,24,0.18)')
                           : isToday ? '#c9a84c'
-                          : (isDark ? 'rgba(255,255,255,0.84)' : 'rgba(55,38,18,0.86)'),
+                          : textMain,
                         fontWeight: isSelected || isToday ? 700 : 400,
                         transition: 'background 0.1s',
                       }}
@@ -277,11 +279,11 @@ export function GlassDatePicker({
                 type="button"
                 onClick={() => selectDate(todayDate)}
                 style={{
-                  marginTop: 8, width: '100%', padding: '4px 0', borderRadius: 9,
+                  marginTop: 8, width: '100%', padding: '5px 0', borderRadius: 10,
                   fontFamily: 'Cairo, sans-serif', fontSize: '0.75rem',
-                  color: isDark ? 'rgba(201,168,76,0.72)' : 'rgba(140,108,30,0.80)',
-                  border: isDark ? '1px solid rgba(201,168,76,0.18)' : '1px solid rgba(201,168,76,0.20)',
-                  background: isDark ? 'rgba(201,168,76,0.05)' : 'rgba(201,168,76,0.06)',
+                  color: '#c9a84c',
+                  border: '1px solid rgba(201,168,76,0.28)',
+                  background: 'rgba(201,168,76,0.08)',
                   cursor: 'pointer',
                 }}
               >

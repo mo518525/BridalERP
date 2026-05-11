@@ -48,7 +48,6 @@ export function InventoryList() {
   const [deleting, setDeleting] = useState<Dress | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [historyDress, setHistoryDress] = useState<Dress | null>(null);
-  const [dressStats, setDressStats] = useState<Record<string, { count: number; total: number }>>({});
   const { addToast } = useUIStore();
 
   // Smart filter state
@@ -68,19 +67,6 @@ export function InventoryList() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Compute per-dress booking stats from all transactions
-  useEffect(() => {
-    api.transactions.getAll().then(txs => {
-      const stats: Record<string, { count: number; total: number }> = {};
-      for (const tx of txs) {
-        if (!tx.dress_id || tx.status === 'cancelled') continue;
-        const s = stats[tx.dress_id] ?? (stats[tx.dress_id] = { count: 0, total: 0 });
-        s.count++;
-        s.total += tx.price || 0;
-      }
-      setDressStats(stats);
-    }).catch(() => {});
-  }, []);
 
   const filtered = useMemo(() => {
     let result = dresses;
@@ -229,7 +215,6 @@ export function InventoryList() {
             {filtered.map((dress) => (
               <motion.div key={dress.id} variants={item} layout exit={{ opacity: 0, scale: 0.95 }}>
                 <DressCard dress={dress} currency={currency} isDark={isDark}
-                  stats={dressStats[dress.id]}
                   onView={() => setViewing(dress)}
                   onEdit={() => { setEditing(dress); setShowForm(true); }}
                   onDelete={canDelete ? () => setDeleting(dress) : undefined}
@@ -264,7 +249,6 @@ export function InventoryList() {
 
 interface DressCardProps {
   dress: Dress; currency: string; isDark: boolean;
-  stats?: { count: number; total: number };
   onView: () => void; onEdit: () => void;
   onDelete?: () => void; onCleaningDone?: () => void; onHistory: () => void;
 }
@@ -482,7 +466,7 @@ function DressHistoryModal({ dress, onClose }: { dress: Dress; onClose: () => vo
 }
 
 // DressCard
-function DressCard({ dress, currency, isDark, stats, onView, onEdit, onDelete, onCleaningDone, onHistory }: DressCardProps) {
+function DressCard({ dress, currency, isDark, onView, onEdit, onDelete, onCleaningDone, onHistory }: DressCardProps) {
   const { language } = useUIStore();
   const { t } = useTranslation();
   const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
@@ -514,18 +498,6 @@ function DressCard({ dress, currency, isDark, stats, onView, onEdit, onDelete, o
           </div>
         )}
         <div className="absolute top-1.5 start-1.5"><StatusBadge status={dress.status} size="sm" /></div>
-        {/* History badge */}
-        {stats && stats.count > 0 && (
-          <button
-            onClick={e => { e.stopPropagation(); onHistory(); }}
-            className="absolute top-1.5 end-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
-            style={{ background: 'rgba(201,168,76,0.88)', color: '#fff', backdropFilter: 'blur(8px)' }}
-            title={`${stats.count} حجز — إجمالي ${formatCurrency(stats.total, currency, language)}`}
-          >
-            <History size={9} />
-            {stats.count}
-          </button>
-        )}
       </div>
 
       {/* Info */}
@@ -539,14 +511,9 @@ function DressCard({ dress, currency, isDark, stats, onView, onEdit, onDelete, o
           </p>
         )}
         <div className="flex items-center justify-between">
-          <span className="text-[11px]" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>
-            <span className="font-semibold" style={{ color: '#c9a84c' }}>{formatCurrency(dress.price, currency, language)}</span>
+          <span className="text-[11px] font-semibold" style={{ color: '#c9a84c', fontFamily: 'Cairo, sans-serif' }}>
+            {formatCurrency(dress.price, currency, language)}
           </span>
-          {stats && stats.count > 0 && (
-            <span className="text-[10px]" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>
-              {stats.count} حجز · <span style={{ color: '#4ade80' }}>{formatCurrency(stats.total, currency, language)}</span>
-            </span>
-          )}
         </div>
       </div>
 
