@@ -55,6 +55,13 @@ pub fn init_db(path: &Path) -> Result<Connection> {
     ");
     let _ = conn.execute_batch("CREATE INDEX IF NOT EXISTS idx_employee_todos_user ON employee_todos(user_id);");
 
+    // Backfill: resolve user_name from users table for existing log entries that have user_id but no user_name
+    let _ = conn.execute_batch(
+        "UPDATE activity_log
+         SET user_name = (SELECT name FROM users WHERE users.id = activity_log.user_id)
+         WHERE user_name IS NULL AND user_id IS NOT NULL;"
+    );
+
     let _ = conn.execute_batch("
         CREATE TABLE IF NOT EXISTS app_settings (
             key   TEXT PRIMARY KEY,
