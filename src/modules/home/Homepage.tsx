@@ -1382,9 +1382,33 @@ export function Homepage() {
         const entity = ENTITY_META[selectedLog.entity_type];
         let parsedMeta: Record<string, unknown> | null = null;
         try { if (selectedLog.metadata) parsedMeta = JSON.parse(selectedLog.metadata); } catch {}
+
+        // Arabic labels for known metadata keys
+        const META_LABELS: Record<string, string> = {
+          customer_name: 'العميل', customer_phone: 'هاتف العميل',
+          dress_code: 'كود الفستان', code: 'الكود',
+          price: 'السعر', deposit: 'العربون', remaining: 'المتبقي',
+          amount: 'المبلغ', total_cost: 'الكلفة الإجمالية',
+          currency: 'العملة', payment_method: 'طريقة الدفع',
+          rental_start: 'تاريخ الاستلام', rental_end: 'تاريخ الإرجاع',
+          return_date: 'تاريخ الإرجاع الفعلي',
+          status: 'الحالة', notes: 'ملاحظات',
+          cleaner_name: 'المنظف', supplier: 'المورد',
+          employee_name: 'الموظف', color: 'اللون',
+          size: 'المقاس', style: 'الطراز',
+        };
+        const PRICE_KEYS = new Set(['price','deposit','remaining','amount','total_cost']);
+        const DATE_KEYS  = new Set(['rental_start','rental_end','return_date']);
+        const HIDDEN_KEYS = new Set(['id','user_id','dress_id','transaction_id','customer_id']);
+
+        // Extract dress code from description text (e.g. W033, D12)
+        const descDressCode = selectedLog.description.match(/\b([A-Z]\d+)\b/)?.[1];
+        const metaHasDressCode = !!(parsedMeta?.dress_code || parsedMeta?.code);
+
         return (
           <DetailPanel title="تفاصيل النشاط" onClose={() => setSelectedLog(null)} isDark={isDark}>
-            <div className="flex items-center gap-2 mb-3">
+            {/* Badges */}
+            <div className="flex items-center gap-2 mb-4">
               <span className="text-xs font-bold px-2.5 py-1 rounded-full"
                 style={{ background: activityLabel.bg, color: activityLabel.color, fontFamily: 'Cairo, sans-serif' }}>
                 {activityLabel.label}
@@ -1396,26 +1420,49 @@ export function Homepage() {
                 </span>
               )}
             </div>
-            <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.85rem',
-              color: isDark ? 'rgba(255,255,255,0.80)' : 'rgba(55,38,18,0.80)', marginBottom: 12, lineHeight: 1.6 }}>
+
+            {/* Description */}
+            <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.875rem',
+              color: isDark ? 'rgba(255,255,255,0.82)' : 'rgba(55,38,18,0.82)',
+              marginBottom: 14, lineHeight: 1.65 }}>
               {selectedLog.description}
             </p>
-            {selectedLog.user_name && <DetailRow label="المستخدم" value={selectedLog.user_name} />}
-            {selectedLog.entity_id && <DetailRow label="المعرّف" value={
-              <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', opacity: 0.7 }}>{selectedLog.entity_id}</span>
-            } />}
-            <DetailRow label="الوقت" value={formatDateTime(selectedLog.created_at, language)} />
-            {parsedMeta && Object.keys(parsedMeta).length > 0 && (
-              <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.72rem',
-                  color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(60,42,24,0.35)', marginBottom: 6 }}>
-                  بيانات إضافية
-                </p>
-                {Object.entries(parsedMeta).map(([k, v]) => (
-                  <DetailRow key={k} label={k} value={String(v)} />
-                ))}
-              </div>
+
+            {/* Dress code — show entity_id for dress entity (it IS the code) */}
+            {selectedLog.entity_type === 'dress' && selectedLog.entity_id && (
+              <DetailRow label="كود الفستان" value={
+                <span style={{ fontWeight: 700, color: '#c9a84c', fontFamily: 'monospace' }}>{selectedLog.entity_id}</span>
+              } />
             )}
+            {/* For transactions/other — extract dress code from description if not in metadata */}
+            {selectedLog.entity_type !== 'dress' && descDressCode && !metaHasDressCode && (
+              <DetailRow label="كود الفستان" value={
+                <span style={{ fontWeight: 700, color: '#c9a84c', fontFamily: 'monospace' }}>{descDressCode}</span>
+              } />
+            )}
+
+            {/* Metadata — mapped to Arabic, formatted by key type */}
+            {parsedMeta && Object.entries(parsedMeta)
+              .filter(([k]) => !HIDDEN_KEYS.has(k) && parsedMeta![k] !== null && parsedMeta![k] !== '')
+              .map(([k, v]) => {
+                const label = META_LABELS[k] ?? k;
+                const raw   = String(v);
+                let node: React.ReactNode = raw;
+                if (k === 'customer_name')       node = <span style={{ fontWeight: 700 }}>{raw}</span>;
+                else if (k === 'dress_code' || k === 'code')
+                  node = <span style={{ fontWeight: 700, color: '#c9a84c', fontFamily: 'monospace' }}>{raw}</span>;
+                else if (PRICE_KEYS.has(k))       node = <span style={{ fontWeight: 700, color: '#4ade80' }}>{raw}</span>;
+                else if (DATE_KEYS.has(k))        node = <span style={{ fontFamily: 'monospace' }}>{raw.slice(0, 10)}</span>;
+                return <DetailRow key={k} label={label} value={node} />;
+              })}
+
+            {/* User */}
+            {selectedLog.user_name && (
+              <DetailRow label="المستخدم" value={selectedLog.user_name} />
+            )}
+
+            {/* Time */}
+            <DetailRow label="الوقت" value={formatDateTime(selectedLog.created_at, language)} />
           </DetailPanel>
         );
       })()}
