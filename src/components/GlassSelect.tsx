@@ -64,7 +64,8 @@ export function GlassSelect({
   const isDark = theme === 'dark';
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
+  const btnRef   = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   const selected = options.find(o => o.value === value);
 
@@ -79,11 +80,13 @@ export function GlassSelect({
 
   useEffect(() => {
     if (!open) return;
-    const close = (e: MouseEvent) => {
-      if (btnRef.current && !btnRef.current.contains(e.target as Node)) setOpen(false);
+    const handler = (e: MouseEvent) => {
+      const inBtn   = btnRef.current?.contains(e.target as Node);
+      const inPopup = popupRef.current?.contains(e.target as Node);
+      if (!inBtn && !inPopup) setOpen(false);
     };
-    document.addEventListener('mousedown', close, true);
-    return () => document.removeEventListener('mousedown', close, true);
+    document.addEventListener('mousedown', handler, true);
+    return () => document.removeEventListener('mousedown', handler, true);
   }, [open]);
 
   // Reposition on scroll/resize
@@ -180,11 +183,13 @@ export function GlassSelect({
         <AnimatePresence>
           {open && (
             <motion.div
+              ref={popupRef}
               initial={{ opacity: 0, y: -6, scaleY: 0.95 }}
               animate={{ opacity: 1, y: 0, scaleY: 1 }}
               exit={{ opacity: 0, y: -4, scaleY: 0.95 }}
               transition={{ duration: 0.13, ease: 'easeOut' }}
               style={{ ...dropdownStyle, transformOrigin: 'top' }}
+              onMouseDown={e => e.stopPropagation()}
             >
               {placeholder && (
                 <DropdownItem

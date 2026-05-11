@@ -19,8 +19,6 @@ export interface GlassDatePickerProps {
   disabled?: boolean;
   min?: string;
   max?: string;
-  className?: string;
-  style?: React.CSSProperties;
 }
 
 function parseDate(s: string): Date | null {
@@ -40,50 +38,8 @@ function formatDisplay(s: string): string {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function DayCell({ date, selected, isToday, otherMonth, disabled, isDark, onSelect, onHover, hovered }: {
-  date: Date; selected: boolean; isToday: boolean; otherMonth: boolean;
-  disabled: boolean; isDark: boolean; onSelect: () => void;
-  onHover: (v: boolean) => void; hovered: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      onMouseEnter={() => onHover(true)}
-      onMouseLeave={() => onHover(false)}
-      disabled={disabled}
-      style={{
-        height: 32,
-        borderRadius: 9,
-        fontSize: '0.8rem',
-        fontFamily: 'Cairo, sans-serif',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        border: isToday && !selected
-          ? '1px solid rgba(201,168,76,0.55)'
-          : '1px solid transparent',
-        background: selected
-          ? 'linear-gradient(135deg, rgba(201,168,76,0.90), rgba(180,145,55,0.90))'
-          : hovered && !disabled && !otherMonth
-            ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.55)')
-            : 'transparent',
-        boxShadow: selected
-          ? '0 4px 10px rgba(201,168,76,0.28), inset 0 1px 0 rgba(255,255,255,0.22)'
-          : 'none',
-        color: selected
-          ? '#fff'
-          : otherMonth || disabled
-            ? (isDark ? 'rgba(255,255,255,0.18)' : 'rgba(60,42,24,0.22)')
-            : isToday
-              ? '#c9a84c'
-              : (isDark ? 'rgba(255,255,255,0.84)' : 'rgba(55,38,18,0.86)'),
-        fontWeight: selected || isToday ? 700 : 400,
-        transition: 'background 0.12s, box-shadow 0.12s',
-      }}
-    >
-      {date.getDate()}
-    </button>
-  );
-}
+const POPUP_H = 300;
+const POPUP_W = 270;
 
 export function GlassDatePicker({
   value, onChange, label, placeholder, error, required,
@@ -92,9 +48,10 @@ export function GlassDatePicker({
   const { theme } = useUIStore();
   const isDark = theme === 'dark';
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, above: false });
   const [hoveredIdx, setHoveredIdx] = useState(-1);
-  const btnRef = useRef<HTMLButtonElement>(null);
+  const btnRef  = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   const todayDate = new Date(); todayDate.setHours(0, 0, 0, 0);
   const todayStr = toDateStr(todayDate);
@@ -102,9 +59,14 @@ export function GlassDatePicker({
   const computePos = useCallback(() => {
     if (!btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
+    const w = Math.max(r.width, POPUP_W);
     const spaceBelow = window.innerHeight - r.bottom;
-    const top = spaceBelow < 320 ? r.top - 4 : r.bottom + 4;
-    setPos({ top, left: r.left, width: Math.max(r.width, 290) });
+    const above = spaceBelow < POPUP_H + 16 && r.top > POPUP_H + 16;
+    // Clamp horizontal so popup never overflows screen
+    let left = r.left;
+    if (left + w > window.innerWidth - 8) left = Math.max(8, window.innerWidth - w - 8);
+    const top = above ? r.top - POPUP_H - 6 : r.bottom + 4;
+    setPos({ top, left, width: w, above });
   }, []);
 
   const openPicker = useCallback(() => {
@@ -116,17 +78,19 @@ export function GlassDatePicker({
     setOpen(true);
   }, [disabled, value, computePos]);
 
-  const selected = parseDate(value);
-  const [viewYear, setViewYear] = useState(selected?.getFullYear() ?? todayDate.getFullYear());
-  const [viewMonth, setViewMonth] = useState(selected?.getMonth() ?? todayDate.getMonth());
+  const [viewYear,  setViewYear]  = useState(() => parseDate(value)?.getFullYear()  ?? todayDate.getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => parseDate(value)?.getMonth()    ?? todayDate.getMonth());
 
+  // Close on outside click — exclude both trigger and popup
   useEffect(() => {
     if (!open) return;
-    const close = (e: MouseEvent) => {
-      if (btnRef.current && !btnRef.current.contains(e.target as Node)) setOpen(false);
+    const handler = (e: MouseEvent) => {
+      const inBtn   = btnRef.current?.contains(e.target as Node);
+      const inPopup = popupRef.current?.contains(e.target as Node);
+      if (!inBtn && !inPopup) setOpen(false);
     };
-    document.addEventListener('mousedown', close, true);
-    return () => document.removeEventListener('mousedown', close, true);
+    document.addEventListener('mousedown', handler, true);
+    return () => document.removeEventListener('mousedown', handler, true);
   }, [open]);
 
   useEffect(() => {
@@ -140,7 +104,7 @@ export function GlassDatePicker({
   const nextMonth = () => { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); } else setViewMonth(m => m + 1); };
 
   // Build 6-row grid
-  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const firstDay    = new Date(viewYear, viewMonth, 1).getDay();
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const daysInPrev  = new Date(viewYear, viewMonth, 0).getDate();
   const cells: Date[] = [];
@@ -150,18 +114,20 @@ export function GlassDatePicker({
 
   const minDate = parseDate(min ?? '');
   const maxDate = parseDate(max ?? '');
-  const isOff = (d: Date) => (minDate && d < minDate) || (maxDate && d > maxDate) || false;
+  const isOff   = (d: Date) => (minDate && d < minDate) || (maxDate && d > maxDate) || false;
 
   const selectDate = (d: Date) => { if (isOff(d)) return; onChange(toDateStr(d)); setOpen(false); };
 
-  const navBtnStyle: React.CSSProperties = {
+  // ─── styles ───────────────────────────────────────────────────────────────
+  const navBtnSt: React.CSSProperties = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    width: 28, height: 28, borderRadius: 8, border: 'none', cursor: 'pointer',
-    background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.55)',
-    color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.55)',
+    width: 26, height: 26, borderRadius: 8, border: 'none', cursor: 'pointer',
+    background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.60)',
+    color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(60,42,24,0.55)',
+    flexShrink: 0,
   };
 
-  const triggerStyle: React.CSSProperties = {
+  const triggerSt: React.CSSProperties = {
     background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.60)',
     backdropFilter: 'blur(16px)',
     WebkitBackdropFilter: 'blur(16px)',
@@ -179,23 +145,23 @@ export function GlassDatePicker({
     transition: 'border-color 0.15s',
   };
 
-  const popupStyle: React.CSSProperties = {
+  const popupSt: React.CSSProperties = {
     position: 'fixed',
     top: pos.top,
     left: pos.left,
     width: pos.width,
     zIndex: 99999,
     background: isDark
-      ? 'linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.05) 100%)'
-      : 'linear-gradient(180deg, rgba(255,255,255,0.86) 0%, rgba(255,255,255,0.72) 100%)',
-    backdropFilter: 'blur(28px) saturate(170%)',
-    WebkitBackdropFilter: 'blur(28px) saturate(170%)',
-    border: isDark ? '1px solid rgba(255,255,255,0.14)' : '1px solid rgba(255,255,255,0.82)',
-    borderRadius: 20,
+      ? 'linear-gradient(180deg, rgba(30,20,10,0.96) 0%, rgba(24,15,6,0.96) 100%)'
+      : 'linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248,244,238,0.96) 100%)',
+    backdropFilter: 'blur(28px) saturate(160%)',
+    WebkitBackdropFilter: 'blur(28px) saturate(160%)',
+    border: isDark ? '1px solid rgba(255,255,255,0.14)' : '1px solid rgba(201,168,76,0.25)',
+    borderRadius: 18,
     boxShadow: isDark
-      ? '0 10px 22px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.08)'
-      : '0 8px 18px rgba(100,80,40,0.08), inset 0 1px 0 rgba(255,255,255,0.90)',
-    padding: '14px 12px 10px',
+      ? '0 12px 28px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.07)'
+      : '0 8px 20px rgba(100,80,40,0.12), inset 0 1px 0 rgba(255,255,255,0.90)',
+    padding: '10px 10px 8px',
   };
 
   return (
@@ -214,22 +180,22 @@ export function GlassDatePicker({
         type="button"
         onClick={() => open ? setOpen(false) : openPicker()}
         className="flex items-center justify-between w-full h-10 px-3"
-        style={triggerStyle}
+        style={triggerSt}
         disabled={disabled}
       >
         <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.875rem' }}>
           {value ? formatDisplay(value) : (placeholder ?? 'اختر تاريخاً')}
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           {value && !disabled && (
             <span
               onMouseDown={e => { e.stopPropagation(); onChange(''); setOpen(false); }}
               style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(60,42,24,0.30)', display: 'flex', cursor: 'pointer' }}
             >
-              <X size={12} />
+              <X size={11} />
             </span>
           )}
-          <Calendar size={14} style={{ color: isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.38)', flexShrink: 0 }} />
+          <Calendar size={13} style={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(60,42,24,0.35)', flexShrink: 0 }} />
         </div>
       </button>
 
@@ -237,51 +203,73 @@ export function GlassDatePicker({
         <AnimatePresence>
           {open && (
             <motion.div
-              initial={{ opacity: 0, y: -6, scaleY: 0.96 }}
+              ref={popupRef}
+              initial={{ opacity: 0, y: pos.above ? 6 : -6, scaleY: 0.96 }}
               animate={{ opacity: 1, y: 0, scaleY: 1 }}
-              exit={{ opacity: 0, y: -4, scaleY: 0.96 }}
-              transition={{ duration: 0.13, ease: 'easeOut' }}
-              style={{ ...popupStyle, transformOrigin: 'top' }}
+              exit={{ opacity: 0, scaleY: 0.96 }}
+              transition={{ duration: 0.12, ease: 'easeOut' }}
+              style={{ ...popupSt, transformOrigin: pos.above ? 'bottom' : 'top' }}
               onMouseDown={e => e.stopPropagation()}
             >
               {/* Month navigation */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <button type="button" onClick={prevMonth} style={navBtnStyle}>
-                  <ChevronRight size={13} />
-                </button>
-                <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.9rem', fontWeight: 700, color: isDark ? 'rgba(255,255,255,0.90)' : 'rgba(55,38,18,0.90)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <button type="button" onClick={prevMonth} style={navBtnSt}><ChevronRight size={12} /></button>
+                <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.84rem', fontWeight: 700, color: isDark ? 'rgba(255,255,255,0.90)' : 'rgba(55,38,18,0.90)' }}>
                   {MONTHS[viewMonth]} {viewYear}
                 </span>
-                <button type="button" onClick={nextMonth} style={navBtnStyle}>
-                  <ChevronLeft size={13} />
-                </button>
+                <button type="button" onClick={nextMonth} style={navBtnSt}><ChevronLeft size={12} /></button>
               </div>
 
               {/* Weekday headers */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 6 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
                 {DAYS.map(d => (
-                  <div key={d} style={{ textAlign: 'center', fontSize: '0.68rem', fontFamily: 'Cairo, sans-serif', fontWeight: 600, color: isDark ? 'rgba(255,255,255,0.28)' : 'rgba(60,42,24,0.30)', paddingBottom: 2 }}>
+                  <div key={d} style={{ textAlign: 'center', fontSize: '0.64rem', fontFamily: 'Cairo, sans-serif', fontWeight: 600, color: isDark ? 'rgba(255,255,255,0.26)' : 'rgba(60,42,24,0.28)' }}>
                     {d}
                   </div>
                 ))}
               </div>
 
               {/* Days grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-                {cells.map((cell, i) => (
-                  <DayCell
-                    key={i}
-                    date={cell}
-                    selected={toDateStr(cell) === value}
-                    isToday={toDateStr(cell) === todayStr}
-                    otherMonth={cell.getMonth() !== viewMonth}
-                    disabled={!!isOff(cell)}
-                    isDark={isDark}
-                    onSelect={() => selectDate(cell)}
-                    onHover={v => setHoveredIdx(v ? i : -1)}
-                    hovered={hoveredIdx === i}
-                  />
-                ))}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
+                {cells.map((cell, i) => {
+                  const isSelected  = toDateStr(cell) === value;
+                  const isToday     = toDateStr(cell) === todayStr;
+                  const isOtherMon  = cell.getMonth() !== viewMonth;
+                  const isDisabled  = !!isOff(cell);
+                  const hov         = hoveredIdx === i && !isDisabled && !isOtherMon;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => selectDate(cell)}
+                      onMouseEnter={() => setHoveredIdx(i)}
+                      onMouseLeave={() => setHoveredIdx(-1)}
+                      disabled={isDisabled}
+                      style={{
+                        height: 28,
+                        borderRadius: 7,
+                        fontSize: '0.78rem',
+                        fontFamily: 'Cairo, sans-serif',
+                        cursor: isDisabled ? 'not-allowed' : 'pointer',
+                        border: isToday && !isSelected ? '1px solid rgba(201,168,76,0.50)' : '1px solid transparent',
+                        background: isSelected
+                          ? 'linear-gradient(135deg, rgba(201,168,76,0.92), rgba(176,138,44,0.92))'
+                          : hov
+                            ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(201,168,76,0.10)')
+                            : 'transparent',
+                        boxShadow: isSelected ? '0 3px 8px rgba(201,168,76,0.30)' : 'none',
+                        color: isSelected ? '#fff'
+                          : isOtherMon || isDisabled ? (isDark ? 'rgba(255,255,255,0.16)' : 'rgba(60,42,24,0.20)')
+                          : isToday ? '#c9a84c'
+                          : (isDark ? 'rgba(255,255,255,0.84)' : 'rgba(55,38,18,0.86)'),
+                        fontWeight: isSelected || isToday ? 700 : 400,
+                        transition: 'background 0.1s',
+                      }}
+                    >
+                      {cell.getDate()}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Today shortcut */}
@@ -289,11 +277,11 @@ export function GlassDatePicker({
                 type="button"
                 onClick={() => selectDate(todayDate)}
                 style={{
-                  marginTop: 10, width: '100%', padding: '5px 0', borderRadius: 10,
-                  fontFamily: 'Cairo, sans-serif', fontSize: '0.78rem',
-                  color: isDark ? 'rgba(201,168,76,0.75)' : 'rgba(160,128,40,0.80)',
-                  border: isDark ? '1px solid rgba(201,168,76,0.20)' : '1px solid rgba(201,168,76,0.22)',
-                  background: isDark ? 'rgba(201,168,76,0.06)' : 'rgba(201,168,76,0.07)',
+                  marginTop: 8, width: '100%', padding: '4px 0', borderRadius: 9,
+                  fontFamily: 'Cairo, sans-serif', fontSize: '0.75rem',
+                  color: isDark ? 'rgba(201,168,76,0.72)' : 'rgba(140,108,30,0.80)',
+                  border: isDark ? '1px solid rgba(201,168,76,0.18)' : '1px solid rgba(201,168,76,0.20)',
+                  background: isDark ? 'rgba(201,168,76,0.05)' : 'rgba(201,168,76,0.06)',
                   cursor: 'pointer',
                 }}
               >

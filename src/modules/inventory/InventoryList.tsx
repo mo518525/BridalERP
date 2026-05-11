@@ -48,6 +48,7 @@ export function InventoryList() {
   const [deleting, setDeleting] = useState<Dress | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [historyDress, setHistoryDress] = useState<Dress | null>(null);
+  const [dressStats, setDressStats] = useState<Record<string, { count: number; total: number }>>({});
   const { addToast } = useUIStore();
 
   // Smart filter state
@@ -66,6 +67,20 @@ export function InventoryList() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Compute per-dress booking stats from all transactions
+  useEffect(() => {
+    api.transactions.getAll().then(txs => {
+      const stats: Record<string, { count: number; total: number }> = {};
+      for (const tx of txs) {
+        if (!tx.dress_id || tx.status === 'cancelled') continue;
+        const s = stats[tx.dress_id] ?? (stats[tx.dress_id] = { count: 0, total: 0 });
+        s.count++;
+        s.total += tx.price || 0;
+      }
+      setDressStats(stats);
+    }).catch(() => {});
+  }, []);
 
   const filtered = useMemo(() => {
     let result = dresses;
@@ -214,6 +229,7 @@ export function InventoryList() {
             {filtered.map((dress) => (
               <motion.div key={dress.id} variants={item} layout exit={{ opacity: 0, scale: 0.95 }}>
                 <DressCard dress={dress} currency={currency} isDark={isDark}
+                  stats={dressStats[dress.id]}
                   onView={() => setViewing(dress)}
                   onEdit={() => { setEditing(dress); setShowForm(true); }}
                   onDelete={canDelete ? () => setDeleting(dress) : undefined}
@@ -248,6 +264,7 @@ export function InventoryList() {
 
 interface DressCardProps {
   dress: Dress; currency: string; isDark: boolean;
+  stats?: { count: number; total: number };
   onView: () => void; onEdit: () => void;
   onDelete?: () => void; onCleaningDone?: () => void; onHistory: () => void;
 }
@@ -440,9 +457,16 @@ function DressHistoryModal({ dress, onClose }: { dress: Dress; onClose: () => vo
           {/* Footer */}
           <div className="px-6 py-3 flex-shrink-0 flex items-center justify-between"
             style={{ borderTop: `1px solid ${gold}22` }}>
-            <span className="text-xs" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>
-              {transactions.length} معاملة
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>
+                {transactions.filter(t => t.status !== 'cancelled').length} حجز
+              </span>
+              {transactions.length > 0 && (
+                <span className="text-xs font-bold" style={{ color: gold, fontFamily: 'Cairo, sans-serif' }}>
+                  إجمالي الإيرادات: {transactions.filter(t => t.status !== 'cancelled').reduce((s, t) => s + (t.price || 0), 0).toLocaleString()} $
+                </span>
+              )}
+            </div>
             <button onClick={onClose}
               className="px-4 py-1.5 rounded-xl text-sm font-semibold"
               style={{ fontFamily: 'Cairo, sans-serif', color: textMuted,
@@ -458,7 +482,7 @@ function DressHistoryModal({ dress, onClose }: { dress: Dress; onClose: () => vo
 }
 
 // DressCard
-function DressCard({ dress, currency, isDark, onView, onEdit, onDelete, onCleaningDone, onHistory }: DressCardProps) {
+function DressCard({ dress, currency, isDark, stats, onView, onEdit, onDelete, onCleaningDone, onHistory }: DressCardProps) {
   const { language } = useUIStore();
   const { t } = useTranslation();
   const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
@@ -466,83 +490,99 @@ function DressCard({ dress, currency, isDark, onView, onEdit, onDelete, onCleani
 
   return (
     <motion.div
-      whileHover={{ y: -4, scale: 1.01 }}
+      whileHover={{ y: -3, scale: 1.01 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      className="rounded-2xl border overflow-hidden flex flex-col gap-0 cursor-pointer group"
+      className="rounded-2xl border overflow-hidden flex flex-col cursor-pointer group"
       style={{
         background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.50)',
         border: isDark ? '1px solid rgba(255,255,255,0.13)' : '1px solid transparent',
         backdropFilter: 'blur(16px) saturate(148%)',
         WebkitBackdropFilter: 'blur(16px) saturate(148%)',
         boxShadow: isDark
-          ? '0 18px 38px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.08)'
-          : '0 8px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.84)',
+          ? '0 12px 28px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.07)'
+          : '0 6px 18px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.84)',
       }}
     >
       {/* Image */}
-      <div className="h-36 relative overflow-hidden"
+      <div className="h-28 relative overflow-hidden flex-shrink-0"
         style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(60,42,24,0.04)' }}>
         {dress.image_path ? (
           <img src={dress.image_path} alt={dress.code} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Package size={36} style={{ color: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(60,42,24,0.12)' }} />
+            <Package size={28} style={{ color: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(60,42,24,0.10)' }} />
           </div>
         )}
-        <div className="absolute top-2 start-2"><StatusBadge status={dress.status} /></div>
+        <div className="absolute top-1.5 start-1.5"><StatusBadge status={dress.status} size="sm" /></div>
+        {/* History badge */}
+        {stats && stats.count > 0 && (
+          <button
+            onClick={e => { e.stopPropagation(); onHistory(); }}
+            className="absolute top-1.5 end-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+            style={{ background: 'rgba(201,168,76,0.88)', color: '#fff', backdropFilter: 'blur(8px)' }}
+            title={`${stats.count} حجز — إجمالي ${formatCurrency(stats.total, currency, language)}`}
+          >
+            <History size={9} />
+            {stats.count}
+          </button>
+        )}
       </div>
 
       {/* Info */}
-      <div className="flex flex-col gap-1.5 p-3.5">
-        <div className="flex items-center justify-between">
-          <span className="font-bold text-sm" style={{ color: textMain, fontFamily: 'Cairo, sans-serif' }}>{dress.code}</span>
-          <StatusBadge status={dress.status} size="sm" />
+      <div className="flex flex-col gap-1 p-2.5">
+        <div className="flex items-center justify-between gap-1">
+          <span className="font-bold text-sm truncate" style={{ color: textMain, fontFamily: 'Cairo, sans-serif' }}>{dress.code}</span>
         </div>
         {(dress.color || dress.style || dress.size) && (
-          <p className="text-xs truncate" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>
+          <p className="text-[11px] truncate" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>
             {[dress.style, dress.color, dress.size].filter(Boolean).join(' · ')}
           </p>
         )}
-        <div className="flex items-center justify-between mt-0.5">
-          <span className="text-xs" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>
-            السعر: <span className="font-semibold" style={{ color: '#c9a84c' }}>{formatCurrency(dress.price, currency, language)}</span>
+        <div className="flex items-center justify-between">
+          <span className="text-[11px]" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>
+            <span className="font-semibold" style={{ color: '#c9a84c' }}>{formatCurrency(dress.price, currency, language)}</span>
           </span>
+          {stats && stats.count > 0 && (
+            <span className="text-[10px]" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>
+              {stats.count} حجز · <span style={{ color: '#4ade80' }}>{formatCurrency(stats.total, currency, language)}</span>
+            </span>
+          )}
         </div>
       </div>
 
       {/* Actions */}
       <div className="flex items-center px-1 pb-1"
-        style={{ borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(60,42,24,0.06)' }}>
-        <button onClick={onView} className="flex-1 flex items-center justify-center gap-1 p-2 rounded-lg text-xs transition-colors"
+        style={{ borderTop: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(60,42,24,0.05)' }}>
+        <button onClick={onView} className="flex-1 flex items-center justify-center gap-1 p-1.5 rounded-lg text-[11px]"
           style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}
           onMouseEnter={e => (e.currentTarget.style.color = textMain)}
           onMouseLeave={e => (e.currentTarget.style.color = textMuted)}>
-          <Eye size={12} /> {t('actions.view')}
+          <Eye size={11} /> {t('actions.view')}
         </button>
-        <button onClick={onEdit} className="flex-1 flex items-center justify-center gap-1 p-2 rounded-lg text-xs transition-colors"
+        <button onClick={onEdit} className="flex-1 flex items-center justify-center gap-1 p-1.5 rounded-lg text-[11px]"
           style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}
           onMouseEnter={e => (e.currentTarget.style.color = textMain)}
           onMouseLeave={e => (e.currentTarget.style.color = textMuted)}>
-          <Pencil size={12} /> {t('actions.edit')}
+          <Pencil size={11} /> {t('actions.edit')}
         </button>
-        <button onClick={onHistory} className="flex-1 flex items-center justify-center gap-1 p-2 rounded-lg text-xs transition-colors"
+        <button onClick={onHistory} className="flex-1 flex items-center justify-center gap-1 p-1.5 rounded-lg text-[11px] relative"
           style={{ color: '#c9a84c88', fontFamily: 'Cairo, sans-serif' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#c9a84c')}
           onMouseLeave={e => (e.currentTarget.style.color = '#c9a84c88')}>
-          <History size={12} /> سجل
+          <History size={11} /> سجل
         </button>
         {onCleaningDone && (
-          <button onClick={onCleaningDone} className="p-2 rounded-lg text-xs transition-colors"
-            style={{ color: '#c084fc', fontFamily: 'Cairo, sans-serif' }}>
-            <Sparkles size={12} />
+          <button onClick={onCleaningDone} className="p-1.5 rounded-lg"
+            style={{ color: '#c084fc' }}>
+            <Sparkles size={11} />
           </button>
         )}
         {onDelete && (
-          <button onClick={onDelete} className="p-2 rounded-lg transition-colors"
-            style={{ color: 'rgba(248,113,113,0.60)' }}
+          <button onClick={onDelete} className="p-1.5 rounded-lg"
+            style={{ color: 'rgba(248,113,113,0.55)' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(248,113,113,0.60)')}>
-            <Trash2 size={13} />
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(248,113,113,0.55)')}>
+            <Trash2 size={11} />
           </button>
         )}
       </div>
