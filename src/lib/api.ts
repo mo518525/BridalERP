@@ -95,7 +95,7 @@ export const api = {
     getAll: (filter?: FilterParams) => invoke<Dress[]>('get_dresses', { filter }),
     getOne: (id: string) => invoke<Dress>('get_dress', { id }),
     getNextCode: () => invoke<string>('get_next_dress_code'),
-    create: (input: CreateDressInput) => invoke<Dress>('create_dress', { input }),
+    create: (input: CreateDressInput) => invoke<Dress>('create_dress', { input: { ...input, user_id: getCurrentUserId() } }),
     update: (input: UpdateDressInput) => invoke<void>('update_dress', { input }),
     updateStatus: (dress_id: string, status: string) =>
       invoke<void>('update_dress_status', { dress_id, status }),
@@ -109,22 +109,22 @@ export const api = {
     getOne: (id: string) => invoke<Transaction>('get_transaction', { id }),
     createSale: (input: CreateSaleInput) => invoke<Transaction>('create_sale', { input }),
     createRental: (input: CreateRentalInput) => invoke<Transaction>('create_rental', { input }),
-    processReturn: (input: ProcessReturnInput) => invoke<void>('process_return', { input }),
+    processReturn: (input: ProcessReturnInput) => invoke<void>('process_return', { input: { ...input, user_id: getCurrentUserId() } }),
     markCleaningDone: (dress_id: string) =>
       invoke<void>('mark_cleaning_done', { dressId: dress_id }),
     complete: (id: string, amount_paid: number) =>
       invoke<void>('complete_transaction', { id, amountPaid: amount_paid }),
-    cancel: (id: string) => invoke<void>('cancel_transaction', { id }),
+    cancel: (id: string) => invoke<void>('cancel_transaction', { id, userId: getCurrentUserId() }),
     reserve: (dress_id: string, customer_id: string, notes?: string) =>
-      invoke<void>('reserve_dress', { dress_id, customer_id, notes }),
+      invoke<void>('reserve_dress', { dress_id, customer_id, notes, userId: getCurrentUserId() }),
   },
 
   customers: {
     getAll: (search?: string) => invoke<Customer[]>('get_customers', { search }),
     getOne: (id: string) => invoke<Customer>('get_customer', { id }),
-    create: (input: CreateCustomerInput) => invoke<Customer>('create_customer', { input }),
+    create: (input: CreateCustomerInput) => invoke<Customer>('create_customer', { input: { ...input, user_id: getCurrentUserId() } }),
     update: (id: string, name: string, phone?: string, address?: string, notes?: string) =>
-      invoke<void>('update_customer', { id, name, phone, address, notes }),
+      invoke<void>('update_customer', { id, name, phone, address, notes, userId: getCurrentUserId() }),
     delete: (id: string) =>
       invoke<void>('delete_customer', { id, userId: getCurrentUserId() }),
     getHistory: (customer_id: string) =>
@@ -135,7 +135,7 @@ export const api = {
     getAll: (filter?: FilterParams) => invoke<Expense[]>('get_expenses', { filter }),
     create: (input: CreateExpenseInput) => invoke<Expense>('create_expense', { input }),
     update: (id: string, category: string, amount: number, description: string | undefined, date: string, recurring_type: RecurringType) =>
-      invoke<void>('update_expense', { id, category, amount, description, date, recurringType: recurring_type }),
+      invoke<void>('update_expense', { id, category, amount, description, date, recurringType: recurring_type, userId: getCurrentUserId() }),
     delete: (id: string) =>
       invoke<void>('delete_expense', { id, userId: getCurrentUserId() }),
   },
@@ -143,8 +143,8 @@ export const api = {
   reminders: {
     getAll: (status?: string, reminder_type?: string) =>
       invoke<Reminder[]>('get_reminders', { status, reminderType: reminder_type }),
-    create: (input: CreateReminderInput) => invoke<Reminder>('create_reminder', { input }),
-    markDone: (id: string) => invoke<void>('mark_reminder_done', { id }),
+    create: (input: CreateReminderInput) => invoke<Reminder>('create_reminder', { input: { ...input, user_id: getCurrentUserId() } }),
+    markDone: (id: string) => invoke<void>('mark_reminder_done', { id, userId: getCurrentUserId() }),
     delete: (id: string) =>
       invoke<void>('delete_reminder', { id, userId: getCurrentUserId() }),
     update: (id: string, date: string, priority: string, status: string) =>

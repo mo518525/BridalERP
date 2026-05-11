@@ -398,7 +398,7 @@ pub fn process_return(state: tauri::State<'_, AppState>, input: ProcessReturnInp
 
     let clean_note = if input.needs_cleaning { "يحتاج تنظيف" } else { "متاح مباشرة" };
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
-        user_id: None,
+        user_id: input.user_id.as_deref(),
         user_name: None,
         action: "process_return",
         entity_type: "transaction",
@@ -526,7 +526,7 @@ pub fn complete_transaction(
 }
 
 #[tauri::command]
-pub fn cancel_transaction(state: tauri::State<'_, AppState>, id: String) -> Result<(), String> {
+pub fn cancel_transaction(state: tauri::State<'_, AppState>, id: String, user_id: Option<String>) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let now = Utc::now().to_rfc3339();
 
@@ -561,7 +561,7 @@ pub fn cancel_transaction(state: tauri::State<'_, AppState>, id: String) -> Resu
     ).map_err(|e| e.to_string())?;
 
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
-        user_id: None,
+        user_id: user_id.as_deref(),
         user_name: None,
         action: "cancel_transaction",
         entity_type: "transaction",
@@ -574,7 +574,7 @@ pub fn cancel_transaction(state: tauri::State<'_, AppState>, id: String) -> Resu
 }
 
 #[tauri::command]
-pub fn reserve_dress(state: tauri::State<'_, AppState>, dress_id: String, customer_id: String, notes: Option<String>) -> Result<(), String> {
+pub fn reserve_dress(state: tauri::State<'_, AppState>, dress_id: String, customer_id: String, notes: Option<String>, user_id: Option<String>) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let now = Utc::now().to_rfc3339();
 
@@ -592,7 +592,7 @@ pub fn reserve_dress(state: tauri::State<'_, AppState>, dress_id: String, custom
     ).map_err(|e| e.to_string())?;
 
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
-        user_id: None,
+        user_id: user_id.as_deref(),
         user_name: None,
         action: "reserve_dress",
         entity_type: "dress",

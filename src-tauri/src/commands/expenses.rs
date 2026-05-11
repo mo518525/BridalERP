@@ -142,6 +142,7 @@ pub fn update_expense(
     description: Option<String>,
     date: String,
     recurring_type: String,
+    user_id: Option<String>,
 ) -> Result<(), String> {
     crate::validation::validate_expense_category(&category)?;
     if amount <= 0.0 {
@@ -158,7 +159,7 @@ pub fn update_expense(
     ).map_err(|e| e.to_string())?;
 
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
-        user_id: None,
+        user_id: user_id.as_deref(),
         user_name: None,
         action: "update_expense",
         entity_type: "expense",

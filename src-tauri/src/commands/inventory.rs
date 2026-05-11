@@ -136,7 +136,7 @@ pub fn create_dress(state: tauri::State<'_, AppState>, input: CreateDressInput) 
 
     let desc = format!("تم إضافة فستان جديد: {}", code);
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
-        user_id: None,
+        user_id: input.user_id.as_deref(),
         user_name: None,
         action: "create_dress",
         entity_type: "dress",

@@ -50,6 +50,7 @@ pub struct CreateDressInput {
     pub price: f64,
     pub notes: Option<String>,
     pub image_path: Option<String>,
+    pub user_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -81,6 +82,7 @@ pub struct CreateCustomerInput {
     pub phone: Option<String>,
     pub address: Option<String>,
     pub notes: Option<String>,
+    pub user_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -152,6 +154,7 @@ pub struct ProcessReturnInput {
     pub needs_cleaning: bool,
     pub cleaner_name: Option<String>,
     pub notes: Option<String>,
+    pub user_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -207,6 +210,7 @@ pub struct CreateReminderInput {
     pub date: String,
     pub priority: String,
     pub transaction_id: Option<String>,
+    pub user_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

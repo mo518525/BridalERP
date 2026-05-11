@@ -70,7 +70,7 @@ pub fn create_reminder(state: tauri::State<'_, AppState>, input: CreateReminderI
 
     let desc = format!("تذكير جديد: {}", input.title);
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
-        user_id: None,
+        user_id: input.user_id.as_deref(),
         user_name: None,
         action: "create_reminder",
         entity_type: "reminder",
@@ -88,12 +88,12 @@ pub fn create_reminder(state: tauri::State<'_, AppState>, input: CreateReminderI
 }
 
 #[tauri::command]
-pub fn mark_reminder_done(state: tauri::State<'_, AppState>, id: String) -> Result<(), String> {
+pub fn mark_reminder_done(state: tauri::State<'_, AppState>, id: String, user_id: Option<String>) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     db.execute("DELETE FROM reminders WHERE id=?1", params![id]).map_err(|e| e.to_string())?;
 
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
-        user_id: None,
+        user_id: user_id.as_deref(),
         user_name: None,
         action: "reminder_done",
         entity_type: "reminder",

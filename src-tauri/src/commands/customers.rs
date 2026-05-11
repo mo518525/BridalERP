@@ -97,7 +97,7 @@ pub fn create_customer(state: tauri::State<'_, AppState>, input: CreateCustomerI
 
     let desc = format!("تم إضافة العميل: {}", input.name);
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
-        user_id: None,
+        user_id: input.user_id.as_deref(),
         user_name: None,
         action: "create_customer",
         entity_type: "customer",
@@ -117,6 +117,7 @@ pub fn update_customer(
     phone: Option<String>,
     address: Option<String>,
     notes: Option<String>,
+    user_id: Option<String>,
 ) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let now = Utc::now().to_rfc3339();
@@ -126,7 +127,7 @@ pub fn update_customer(
     ).map_err(|e| e.to_string())?;
 
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
-        user_id: None,
+        user_id: user_id.as_deref(),
         user_name: None,
         action: "update_customer",
         entity_type: "customer",
