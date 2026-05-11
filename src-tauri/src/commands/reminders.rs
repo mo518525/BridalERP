@@ -69,6 +69,12 @@ pub fn create_reminder(state: tauri::State<'_, AppState>, input: CreateReminderI
     ).map_err(|e| e.to_string())?;
 
     let desc = format!("تذكير جديد: {}", input.title);
+    let reminder_meta = serde_json::json!({
+        "reminder_type": input.reminder_type,
+        "title": input.title,
+        "date": input.date,
+        "priority": input.priority
+    }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: input.user_id.as_deref(),
         user_name: None,
@@ -76,7 +82,7 @@ pub fn create_reminder(state: tauri::State<'_, AppState>, input: CreateReminderI
         entity_type: "reminder",
         entity_id: Some(&id),
         description: &desc,
-        metadata: None,
+        metadata: Some(&reminder_meta),
     });
 
     Ok(Reminder {

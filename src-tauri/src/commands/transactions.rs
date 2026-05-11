@@ -217,6 +217,10 @@ pub fn create_sale(state: tauri::State<'_, AppState>, input: CreateSaleInput) ->
         "SELECT name FROM customers WHERE id=?1", params![input.customer_id], |r| r.get(0)
     ).unwrap_or_default();
 
+    let sale_meta = serde_json::json!({
+        "dress_code": dress_code, "customer_name": customer_name,
+        "price": input.price, "deposit": input.deposit, "currency": sale_currency
+    }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: input.employee_id.as_deref(),
         user_name: None,
@@ -224,7 +228,7 @@ pub fn create_sale(state: tauri::State<'_, AppState>, input: CreateSaleInput) ->
         entity_type: "transaction",
         entity_id: Some(&id),
         description: &format!("بيع فستان {} للعميل {} بسعر {} ر.س", dress_code, customer_name, input.price),
-        metadata: None,
+        metadata: Some(&sale_meta),
     });
 
     Ok(Transaction {
@@ -330,6 +334,11 @@ pub fn create_rental(state: tauri::State<'_, AppState>, input: CreateRentalInput
         "SELECT name FROM customers WHERE id=?1", params![input.customer_id], |r| r.get(0)
     ).unwrap_or_default();
 
+    let rental_meta = serde_json::json!({
+        "dress_code": dress_code, "customer_name": customer_name,
+        "price": input.price, "deposit": input.deposit, "currency": rental_currency,
+        "rental_start": input.rental_start, "rental_end": input.rental_end
+    }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: input.employee_id.as_deref(),
         user_name: None,
@@ -337,7 +346,7 @@ pub fn create_rental(state: tauri::State<'_, AppState>, input: CreateRentalInput
         entity_type: "transaction",
         entity_id: Some(&id),
         description: &format!("تأجير فستان {} للعميل {} من {} إلى {}", dress_code, customer_name, input.rental_start, input.rental_end),
-        metadata: None,
+        metadata: Some(&rental_meta),
     });
 
     Ok(Transaction {
@@ -397,6 +406,19 @@ pub fn process_return(state: tauri::State<'_, AppState>, input: ProcessReturnInp
     ).map_err(|e| e.to_string())?;
 
     let clean_note = if input.needs_cleaning { "يحتاج تنظيف" } else { "متاح مباشرة" };
+    let (ret_dress_code, ret_customer): (String, String) = db.query_row(
+        "SELECT d.code, c.name FROM transactions t
+         JOIN dresses d ON d.id=t.dress_id
+         JOIN customers c ON c.id=t.customer_id
+         WHERE t.id=?1",
+        params![input.transaction_id],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    ).unwrap_or_default();
+    let ret_meta = serde_json::json!({
+        "dress_code": ret_dress_code, "customer_name": ret_customer,
+        "cleaner_name": input.cleaner_name,
+        "status": clean_note
+    }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: input.user_id.as_deref(),
         user_name: None,
@@ -404,7 +426,7 @@ pub fn process_return(state: tauri::State<'_, AppState>, input: ProcessReturnInp
         entity_type: "transaction",
         entity_id: Some(&input.transaction_id),
         description: &format!("تم إرجاع الفستان — {}", clean_note),
-        metadata: None,
+        metadata: Some(&ret_meta),
     });
 
     Ok(())
@@ -445,6 +467,10 @@ pub fn mark_cleaning_done(
         params![dress_id],
     ).map_err(|e| e.to_string())?;
 
+    let clean_done_code: String = db.query_row(
+        "SELECT code FROM dresses WHERE id=?1", params![dress_id], |r| r.get(0)
+    ).unwrap_or_default();
+    let clean_done_meta = serde_json::json!({ "dress_code": clean_done_code }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: user_id.as_deref(),
         user_name: None,
@@ -452,7 +478,7 @@ pub fn mark_cleaning_done(
         entity_type: "dress",
         entity_id: Some(&dress_id),
         description: "تم إنهاء التنظيف، الفستان أصبح متاحاً",
-        metadata: None,
+        metadata: Some(&clean_done_meta),
     });
 
     Ok(())
@@ -511,7 +537,11 @@ pub fn complete_transaction(
         ).map_err(|e| e.to_string())?;
     }
 
-    // Activity log
+    let complete_meta = serde_json::json!({
+        "amount_paid": amount_paid,
+        "remaining": new_remaining,
+        "status": new_status
+    }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: user_id.as_deref(),
         user_name: None,
@@ -519,7 +549,7 @@ pub fn complete_transaction(
         entity_type: "transaction",
         entity_id: Some(&id),
         description: &format!("تم دفع {}, المتبقي: {}, الحالة: {}", amount_paid, new_remaining, new_status),
-        metadata: None,
+        metadata: Some(&complete_meta),
     });
 
     Ok(())
@@ -560,6 +590,19 @@ pub fn cancel_transaction(state: tauri::State<'_, AppState>, id: String, user_id
         params![now, id],
     ).map_err(|e| e.to_string())?;
 
+    let (cancel_dress_code, cancel_customer): (String, String) = db.query_row(
+        "SELECT d.code, c.name FROM transactions t
+         JOIN dresses d ON d.id=t.dress_id
+         JOIN customers c ON c.id=t.customer_id
+         WHERE t.id=?1",
+        params![id],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    ).unwrap_or_default();
+    let cancel_meta = serde_json::json!({
+        "dress_code": cancel_dress_code,
+        "customer_name": cancel_customer,
+        "transaction_type": tx_type
+    }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: user_id.as_deref(),
         user_name: None,
@@ -567,7 +610,7 @@ pub fn cancel_transaction(state: tauri::State<'_, AppState>, id: String, user_id
         entity_type: "transaction",
         entity_id: Some(&id),
         description: "تم إلغاء المعاملة وإعادة الفستان للمخزون",
-        metadata: None,
+        metadata: Some(&cancel_meta),
     });
 
     Ok(())
@@ -591,16 +634,26 @@ pub fn reserve_dress(state: tauri::State<'_, AppState>, dress_id: String, custom
         params![now, dress_id],
     ).map_err(|e| e.to_string())?;
 
+    let reserve_dress_code: String = db.query_row(
+        "SELECT code FROM dresses WHERE id=?1", params![dress_id], |r| r.get(0)
+    ).unwrap_or_default();
+    let reserve_customer_name: String = db.query_row(
+        "SELECT name FROM customers WHERE id=?1", params![customer_id], |r| r.get(0)
+    ).unwrap_or_default();
+    let reserve_meta = serde_json::json!({
+        "dress_code": reserve_dress_code,
+        "customer_name": reserve_customer_name
+    }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: user_id.as_deref(),
         user_name: None,
         action: "reserve_dress",
         entity_type: "dress",
         entity_id: Some(&dress_id),
-        description: &format!("تم حجز الفستان للعميل"),
-        metadata: None,
+        description: &format!("تم حجز الفستان للعميل {}", reserve_customer_name),
+        metadata: Some(&reserve_meta),
     });
 
-    let _ = (customer_id, notes);
+    let _ = notes;
     Ok(())
 }

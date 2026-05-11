@@ -1501,6 +1501,16 @@ export function Homepage() {
                   </p>
                 </div>
               )}
+              {/* Fallback: show description when no structured metadata exists */}
+              {(!parsedMeta || Object.keys(parsedMeta).length === 0) && selectedLog.description && (
+                <div style={{ marginTop: 4, padding: '7px 0' }}>
+                  <p style={{ ...lbl, marginBottom: 4 }}>التفاصيل</p>
+                  <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem', lineHeight: 1.55,
+                    color: isDark ? 'rgba(255,255,255,0.68)' : 'rgba(55,38,18,0.68)', margin: 0 }}>
+                    {selectedLog.description}
+                  </p>
+                </div>
+              )}
               {/* Date of action */}
               <Row label="التاريخ">
                 <span style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>

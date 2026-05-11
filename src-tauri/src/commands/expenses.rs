@@ -115,6 +115,10 @@ pub fn create_expense(state: tauri::State<'_, AppState>, input: CreateExpenseInp
     ).map_err(|e| e.to_string())?;
 
     let desc = format!("مصروف جديد: {} — {} {}", input.category, input.amount, currency);
+    let meta = serde_json::json!({
+        "category": input.category, "amount": input.amount,
+        "currency": currency, "date": input.date
+    }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: input.employee_id.as_deref(),
         user_name: None,
@@ -122,7 +126,7 @@ pub fn create_expense(state: tauri::State<'_, AppState>, input: CreateExpenseInp
         entity_type: "expense",
         entity_id: Some(&id),
         description: &desc,
-        metadata: None,
+        metadata: Some(&meta),
     });
 
     Ok(Expense {
@@ -158,14 +162,17 @@ pub fn update_expense(
         params![category, amount, description, date, recurring_type, now, id],
     ).map_err(|e| e.to_string())?;
 
+    let update_meta = serde_json::json!({
+        "category": category, "amount": amount, "date": date
+    }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: user_id.as_deref(),
         user_name: None,
         action: "update_expense",
         entity_type: "expense",
         entity_id: Some(&id),
-        description: &format!("تم تعديل المصروف: {} — {} ر.س", category, amount),
-        metadata: None,
+        description: &format!("تم تعديل المصروف: {} — {} {}", category, amount, date),
+        metadata: Some(&update_meta),
     });
 
     Ok(())

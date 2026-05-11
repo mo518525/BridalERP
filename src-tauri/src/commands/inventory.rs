@@ -135,6 +135,10 @@ pub fn create_dress(state: tauri::State<'_, AppState>, input: CreateDressInput) 
     ).map_err(|e| e.to_string())?;
 
     let desc = format!("تم إضافة فستان جديد: {}", code);
+    let dress_meta = serde_json::json!({
+        "dress_code": code, "color": input.color, "size": input.size,
+        "style": input.style, "price": input.price
+    }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: input.user_id.as_deref(),
         user_name: None,
@@ -142,7 +146,7 @@ pub fn create_dress(state: tauri::State<'_, AppState>, input: CreateDressInput) 
         entity_type: "dress",
         entity_id: Some(&id),
         description: &desc,
-        metadata: None,
+        metadata: Some(&dress_meta),
     });
 
     Ok(Dress {

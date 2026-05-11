@@ -96,6 +96,9 @@ pub fn create_customer(state: tauri::State<'_, AppState>, input: CreateCustomerI
     ).map_err(|e| e.to_string())?;
 
     let desc = format!("تم إضافة العميل: {}", input.name);
+    let cust_meta = serde_json::json!({
+        "customer_name": input.name, "customer_phone": input.phone
+    }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: input.user_id.as_deref(),
         user_name: None,
@@ -103,7 +106,7 @@ pub fn create_customer(state: tauri::State<'_, AppState>, input: CreateCustomerI
         entity_type: "customer",
         entity_id: Some(&id),
         description: &desc,
-        metadata: None,
+        metadata: Some(&cust_meta),
     });
 
     Ok(Customer { id, name: input.name, phone: input.phone, address: input.address, notes: input.notes, created_at: now.clone(), updated_at: now })
@@ -126,6 +129,7 @@ pub fn update_customer(
         params![name, phone, address, notes, now, id],
     ).map_err(|e| e.to_string())?;
 
+    let upd_cust_meta = serde_json::json!({ "customer_name": name }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: user_id.as_deref(),
         user_name: None,
@@ -133,7 +137,7 @@ pub fn update_customer(
         entity_type: "customer",
         entity_id: Some(&id),
         description: "تم تعديل بيانات العميل",
-        metadata: None,
+        metadata: Some(&upd_cust_meta),
     });
 
     Ok(())
