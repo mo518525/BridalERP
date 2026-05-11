@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../utils/cn';
 import type { FilterParams } from '../types';
+import { GlassSelect } from './GlassSelect';
+import { GlassDatePicker } from './GlassDatePicker';
 
 interface FilterChipProps { label: string; onRemove: () => void; }
 export function FilterChip({ label, onRemove }: FilterChipProps) {
@@ -100,35 +102,35 @@ export function FilterBar({ value, onChange, statusOptions, categoryOptions, sho
         <div className="flex flex-wrap gap-3 p-3 rounded-xl border border-white/10 backdrop-blur-xl"
           style={{ background: 'rgba(255,255,255,0.05)' }}>
           {statusOptions && (
-            <select
+            <GlassSelect
               value={value.status || ''}
-              onChange={(e) => update({ status: e.target.value || undefined })}
-              className="h-8 px-2 rounded-lg border border-white/12 text-white/80 text-xs focus:outline-none focus:ring-1 focus:ring-gold-400 backdrop-blur-xl"
-              style={{ background: 'rgba(255,255,255,0.08)' }}
-            >
-              <option value="">الكل</option>
-              {statusOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+              onChange={(v) => update({ status: v || undefined })}
+              options={[{ value: '', label: 'الكل' }, ...statusOptions]}
+              containerClass="min-w-[130px]"
+            />
           )}
           {categoryOptions && (
-            <select
+            <GlassSelect
               value={value.category || ''}
-              onChange={(e) => update({ category: e.target.value || undefined })}
-              className="h-8 px-2 rounded-lg border border-white/12 text-white/80 text-xs focus:outline-none focus:ring-1 focus:ring-gold-400 backdrop-blur-xl"
-              style={{ background: 'rgba(255,255,255,0.08)' }}
-            >
-              <option value="">كل الفئات</option>
-              {categoryOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+              onChange={(v) => update({ category: v || undefined })}
+              options={[{ value: '', label: 'كل الفئات' }, ...categoryOptions]}
+              containerClass="min-w-[130px]"
+            />
           )}
           {showDateRange && (
             <>
-              <input type="date" value={value.date_from || ''} onChange={(e) => update({ date_from: e.target.value || undefined })}
-                className="h-8 px-2 rounded-lg border border-white/12 text-white/80 text-xs focus:outline-none focus:ring-1 focus:ring-gold-400 backdrop-blur-xl"
-                style={{ background: 'rgba(255,255,255,0.08)', colorScheme: 'dark' }} />
-              <input type="date" value={value.date_to || ''} onChange={(e) => update({ date_to: e.target.value || undefined })}
-                className="h-8 px-2 rounded-lg border border-white/12 text-white/80 text-xs focus:outline-none focus:ring-1 focus:ring-gold-400 backdrop-blur-xl"
-                style={{ background: 'rgba(255,255,255,0.08)', colorScheme: 'dark' }} />
+              <GlassDatePicker
+                value={value.date_from || ''}
+                onChange={(v) => update({ date_from: v || undefined })}
+                placeholder="من تاريخ"
+                containerClass="min-w-[160px]"
+              />
+              <GlassDatePicker
+                value={value.date_to || ''}
+                onChange={(v) => update({ date_to: v || undefined })}
+                placeholder="إلى تاريخ"
+                containerClass="min-w-[160px]"
+              />
             </>
           )}
         </div>

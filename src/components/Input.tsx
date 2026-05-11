@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { cn } from '../utils/cn';
+import { GlassSelect } from './GlassSelect';
 
 const baseInput = [
   'w-full rounded-xl border border-white/14',
@@ -64,44 +65,39 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 );
 Input.displayName = 'Input';
 
-export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectProps {
   label?: string;
   error?: string;
   containerClass?: string;
   options: { value: string; label: string }[];
   placeholder?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  required?: boolean;
+  disabled?: boolean;
 }
 
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, containerClass, options, placeholder, className, style, ...props }, ref) => (
-    <div className={cn('flex flex-col gap-1.5', containerClass)}>
-      {label && (
-        <label className="text-sm font-medium text-white/60">
-          {label}
-          {props.required && <span className="text-red-400 ms-1">*</span>}
-        </label>
-      )}
-      <select
-        ref={ref}
-        className={cn(
-          baseInput,
-          'h-10 px-3',
-          error && 'border-red-400/60',
-          className
-        )}
-        style={{ ...baseStyle, colorScheme: 'dark', ...style }}
-        {...props}
-      >
-        {placeholder && <option value="">{placeholder}</option>}
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-      {error && <p className="text-xs text-red-400">{error}</p>}
-    </div>
-  )
-);
-Select.displayName = 'Select';
+export function Select({ label, error, containerClass, options, placeholder, value, onChange, required, disabled }: SelectProps) {
+  const handleChange = (v: string) => {
+    if (onChange) {
+      const fakeEvent = { target: { value: v } } as React.ChangeEvent<HTMLSelectElement>;
+      onChange(fakeEvent);
+    }
+  };
+  return (
+    <GlassSelect
+      label={label}
+      error={error}
+      containerClass={containerClass}
+      options={options}
+      placeholder={placeholder}
+      value={value ?? ''}
+      onChange={handleChange}
+      required={required}
+      disabled={disabled}
+    />
+  );
+}
 
 export interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;

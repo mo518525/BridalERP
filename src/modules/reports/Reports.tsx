@@ -10,6 +10,7 @@ type ToastFn = (type: 'success' | 'error', msg: string) => void;
 import { useUIStore } from '../../store/uiStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import { todayISO } from '../../utils/formatters';
+import { GlassDatePicker } from '../../components/GlassDatePicker';
 import type { FinancialReport, Transaction, Expense, Customer, Dress } from '../../types';
 
 // Date helpers
@@ -636,11 +637,9 @@ export function Reports() {
               {/* Custom date inputs */}
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-xs" style={{ color: textS, fontFamily:'Cairo,sans-serif' }}>مخصص:</span>
-                <input type="date" value={dateFrom} style={inputStyle}
-                  onChange={e => { setDateFrom(e.target.value); setActivePreset(''); setResult(null); }} />
+                <GlassDatePicker value={dateFrom} onChange={v => { setDateFrom(v); setActivePreset(''); setResult(null); }} placeholder="من تاريخ" containerClass="w-[160px]" />
                 <span style={{ color: textS }}>—</span>
-                <input type="date" value={dateTo} style={inputStyle}
-                  onChange={e => { setDateTo(e.target.value); setActivePreset(''); setResult(null); }} />
+                <GlassDatePicker value={dateTo} onChange={v => { setDateTo(v); setActivePreset(''); setResult(null); }} placeholder="إلى تاريخ" containerClass="w-[160px]" />
               </div>
             </div>
           </motion.div>

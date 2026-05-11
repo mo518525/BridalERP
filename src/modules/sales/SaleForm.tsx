@@ -9,6 +9,7 @@ import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 import { Input, TextArea } from '../../components/Input';
 import { GlassSelect } from '../../components/GlassSelect';
+import { GlassDatePicker } from '../../components/GlassDatePicker';
 import { formatNumber } from '../../utils/formatters';
 import type { Dress } from '../../types';
 
@@ -527,25 +528,11 @@ export function SaleForm({ open, onClose, onSaved }: Props) {
 
         {/* Pickup date + Remaining */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label style={{ fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif',
-              color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)' }}>
-              تاريخ الاستلام
-            </label>
-            <input
-              type="date"
-              value={pickupDate}
-              onChange={e => setPickupDate(e.target.value)}
-              className="h-10 px-3 text-sm rounded-xl outline-none"
-              style={{
-                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.60)',
-                border: isDark ? '1px solid rgba(255,255,255,0.14)' : '1px solid rgba(60,42,24,0.12)',
-                color: textColor,
-                fontFamily: 'Cairo, sans-serif',
-                colorScheme: isDark ? 'dark' : 'light',
-              }}
-            />
-          </div>
+          <GlassDatePicker
+            label="تاريخ الاستلام"
+            value={pickupDate}
+            onChange={v => setPickupDate(v)}
+          />
           <div className="flex flex-col gap-1.5">
             <label style={{ fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif',
               color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)' }}>

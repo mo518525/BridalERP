@@ -9,6 +9,7 @@ import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 import { Input, TextArea } from '../../components/Input';
 import { GlassSelect } from '../../components/GlassSelect';
+import { GlassDatePicker } from '../../components/GlassDatePicker';
 import { formatNumber, todayISO } from '../../utils/formatters';
 import type { Dress } from '../../types';
 
@@ -438,28 +439,24 @@ export function RentalForm({ open, onClose, onSaved }: Props) {
 
         {/* Dates */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label style={{ fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif',
-              color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)' }}>
-              تاريخ الاستلام <span style={{ color: '#f87171' }}>*</span>
-            </label>
-            <input type="date" value={rentalStart}
-              onChange={e => { setRentalStart(e.target.value); setErrors(er => { const c = { ...er }; delete c.rentalStart; return c; }); }}
-              className="h-10 px-3 text-sm rounded-xl outline-none"
-              style={{ ...numInputStyle, border: errors.rentalStart ? '1px solid rgba(239,68,68,0.60)' : numInputStyle.border }} />
-            {errors.rentalStart && <p style={{ fontSize: '0.75rem', color: '#f87171', fontFamily: 'Cairo, sans-serif' }}>{errors.rentalStart}</p>}
-          </div>
+          <GlassDatePicker
+            label="تاريخ الاستلام"
+            value={rentalStart}
+            onChange={v => { setRentalStart(v); setErrors(er => { const c = { ...er }; delete c.rentalStart; return c; }); }}
+            required
+            error={errors.rentalStart}
+          />
           <div className="flex flex-col gap-1.5">
             <label style={{ fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif',
               color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)' }}>
               تاريخ الإرجاع <span style={{ color: '#f87171' }}>*</span>
               {days > 0 && <span style={{ marginInlineStart: 6, fontSize: '0.72rem', color: '#c9a84c', fontWeight: 400 }}>{days} يوم</span>}
             </label>
-            <input type="date" value={rentalEnd}
-              onChange={e => { setRentalEnd(e.target.value); setErrors(er => { const c = { ...er }; delete c.rentalEnd; return c; }); }}
-              className="h-10 px-3 text-sm rounded-xl outline-none"
-              style={{ ...numInputStyle, border: errors.rentalEnd ? '1px solid rgba(239,68,68,0.60)' : numInputStyle.border }} />
-            {errors.rentalEnd && <p style={{ fontSize: '0.75rem', color: '#f87171', fontFamily: 'Cairo, sans-serif' }}>{errors.rentalEnd}</p>}
+            <GlassDatePicker
+              value={rentalEnd}
+              onChange={v => { setRentalEnd(v); setErrors(er => { const c = { ...er }; delete c.rentalEnd; return c; }); }}
+              error={errors.rentalEnd}
+            />
           </div>
         </div>
 

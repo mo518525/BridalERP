@@ -7,6 +7,7 @@ import { api } from '../../lib/api';
 import { useUIStore } from '../../store/uiStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import { Button } from '../../components/Button';
+import { GlassDatePicker } from '../../components/GlassDatePicker';
 import { StatusBadge } from '../../components/StatusBadge';
 import { ConfirmDialog } from '../../components/Modal';
 import { formatCurrency, formatDate } from '../../utils/formatters';
@@ -180,11 +181,9 @@ export function InventoryList() {
             placeholder="بحث بكود الفستان، اللون، الأسلوب، المقاس..."
             style={{ ...inputStyle, paddingInlineStart: 34, width: '100%' }} />
         </div>
-        <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-          style={{ ...inputStyle, width: 140 }} />
+        <GlassDatePicker value={dateFrom} onChange={v => setDateFrom(v)} placeholder="من تاريخ" containerClass="w-[160px]" />
         <span style={{ color: textMuted, fontSize: '0.78rem', fontFamily: 'Cairo' }}>—</span>
-        <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-          style={{ ...inputStyle, width: 140 }} />
+        <GlassDatePicker value={dateTo} onChange={v => setDateTo(v)} placeholder="إلى تاريخ" containerClass="w-[160px]" />
         {(search || statusFilter || dateFrom || dateTo) && (
           <button onClick={() => { setSearch(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); }}
             className="px-3 py-1.5 rounded-xl text-xs"

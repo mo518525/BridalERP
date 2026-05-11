@@ -10,6 +10,7 @@ import { usePermissions } from '../../hooks/usePermissions';
 import { Button } from '../../components/Button';
 import { Modal, ConfirmDialog } from '../../components/Modal';
 import { Input, Select, TextArea } from '../../components/Input';
+import { GlassDatePicker } from '../../components/GlassDatePicker';
 import { ColorPicker } from '../../components/ColorPicker';
 import { formatCurrency, formatDate, todayISO } from '../../utils/formatters';
 import { DRESS_STYLES_AR } from '../../types';
@@ -288,7 +289,7 @@ function DeliveryForm({
         />
 
         <Input label={t('deliveries.supplier')} value={form.supplier} onChange={(e) => set('supplier', e.target.value)} />
-        <Input label={t('deliveries.deliveryDate')} type="date" value={form.delivery_date} onChange={(e) => set('delivery_date', e.target.value)} required />
+        <GlassDatePicker label={t('deliveries.deliveryDate')} value={form.delivery_date} onChange={(v) => set('delivery_date', v)} required />
         <Input label={t('deliveries.totalCost')} type="number" min="0" step="0.01" value={form.total_cost} onChange={(e) => set('total_cost', e.target.value)} />
         <TextArea label={t('inventory.notes')} value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={2} />
       </form>

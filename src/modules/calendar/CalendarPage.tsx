@@ -12,6 +12,7 @@ import { api } from '../../lib/api';
 import { ConfirmDialog, Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 import { Input, Select, TextArea } from '../../components/Input';
+import { GlassDatePicker } from '../../components/GlassDatePicker';
 import { formatDate, isOverdue, todayISO } from '../../utils/formatters';
 import type { Reminder, CalendarEvent } from '../../types';
 
@@ -90,7 +91,7 @@ function AddReminderForm({ onClose, onSaved }: { onClose: () => void; onSaved: (
           <Select label="النوع" value={form.reminder_type} onChange={e => set('reminder_type', e.target.value)} options={TYPE_OPTIONS} />
           <Select label="الأولوية" value={form.priority} onChange={e => set('priority', e.target.value)} options={PRIORITY_OPTIONS} />
         </div>
-        <Input label="التاريخ" type="date" value={form.date} onChange={e => set('date', e.target.value)} required />
+        <GlassDatePicker label="التاريخ" value={form.date} onChange={v => set('date', v)} required />
         <TextArea label="الوصف" value={form.description} onChange={e => set('description', e.target.value)} rows={2} />
       </form>
     </Modal>

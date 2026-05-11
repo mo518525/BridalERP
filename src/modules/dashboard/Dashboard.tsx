@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import { tok } from '../../utils/themeTokens';
 import type { FinancialReport, Transaction, Expense } from '../../types';
+import { GlassDatePicker } from '../../components/GlassDatePicker';
 
 // ---- Utility helpers ----
 
@@ -584,17 +585,21 @@ function DatePickerBar({
       </div>
 
       {/* Custom date inputs */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, direction: 'ltr' }}>
-        <input
-          type="date" value={customFrom} max={today}
-          onChange={(e) => { setCustomFrom(e.target.value); if (e.target.value) setPreset('custom'); }}
-          style={inputStyle}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <GlassDatePicker
+          value={customFrom}
+          max={today}
+          onChange={(v) => { setCustomFrom(v); if (v) setPreset('custom'); }}
+          placeholder="من"
+          containerClass="w-[150px]"
         />
         <span style={{ color: t.textMuted, fontSize: '0.7rem', fontFamily: 'Cairo, sans-serif' }}>إلى</span>
-        <input
-          type="date" value={customTo} max={today}
-          onChange={(e) => { setCustomTo(e.target.value); if (e.target.value) setPreset('custom'); }}
-          style={inputStyle}
+        <GlassDatePicker
+          value={customTo}
+          max={today}
+          onChange={(v) => { setCustomTo(v); if (v) setPreset('custom'); }}
+          placeholder="إلى"
+          containerClass="w-[150px]"
         />
       </div>
     </div>

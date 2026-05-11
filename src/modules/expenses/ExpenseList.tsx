@@ -8,6 +8,7 @@ import { useUIStore } from '../../store/uiStore';
 import { usePermissions } from '../../hooks/usePermissions';
 import { Button } from '../../components/Button';
 import { GlassSelect } from '../../components/GlassSelect';
+import { GlassDatePicker } from '../../components/GlassDatePicker';
 import { ConfirmDialog, Modal } from '../../components/Modal';
 import { Input, Select, TextArea } from '../../components/Input';
 import { formatCurrency, formatDate, todayISO } from '../../utils/formatters';
@@ -226,9 +227,9 @@ export function ExpenseList() {
           containerClass="w-[150px] min-w-[150px]"
         />
 
-        <input type="date" value={filter.date_from || ''} onChange={(event) => updateFilter({ date_from: event.target.value || undefined })} style={{ ...inputStyle, width: 145 }} />
+        <GlassDatePicker value={filter.date_from || ''} onChange={(v) => updateFilter({ date_from: v || undefined })} placeholder="من تاريخ" containerClass="w-[160px]" />
         <span style={{ color: textMuted, fontSize: '0.78rem', fontFamily: 'Cairo' }}>—</span>
-        <input type="date" value={filter.date_to || ''} onChange={(event) => updateFilter({ date_to: event.target.value || undefined })} style={{ ...inputStyle, width: 145 }} />
+        <GlassDatePicker value={filter.date_to || ''} onChange={(v) => updateFilter({ date_to: v || undefined })} placeholder="إلى تاريخ" containerClass="w-[160px]" />
 
         {(filter.search || filter.category || filter.date_from || filter.date_to || filter.recurring_type) && (
           <button
@@ -459,7 +460,7 @@ function ExpenseForm({ expense, onClose, onSaved }: FormProps) {
           </div>
         </div>
 
-        <Input label={t('expenses.date')} type="date" value={form.date} onChange={(event) => set('date', event.target.value)} required />
+        <GlassDatePicker label={t('expenses.date')} value={form.date} onChange={(v) => set('date', v)} required />
         <TextArea label={t('expenses.description')} value={form.description} onChange={(event) => set('description', event.target.value)} rows={2} />
         <Select label={t('expenses.recurring')} value={form.recurring_type} onChange={(event) => set('recurring_type', event.target.value)} options={RECURRING_OPTIONS} />
       </form>
