@@ -4,7 +4,47 @@ A fully offline, desktop-native ERP application built for bridal dress shops. Ma
 
 ---
 
-## Overview
+## Screenshots
+
+### Home — Quick Overview (Dark Mode)
+![Home Page Dark](docs/screenshots/home-dark.png)
+The main landing page gives staff an immediate overview of the day. The top bar shows the current time, date, and logged-in user. A row of live stat chips displays: total transactions today, pending reminders, dresses in the cleaning queue, available dresses in stock, pending payment amounts, today's revenue, and active rentals. Below that, a grid of quick-action buttons provides one-click navigation to every core workflow — Deliveries, Expenses, Customers, Dresses, Cleaning, Returns, Rent a Dress, and Sell a Dress. The lower half shows the **Reminders panel** (overdue items highlighted in red with date and dress code) and the **Activity Log** showing a timestamped feed of recent system events.
+
+---
+
+### Home — Light Mode
+![Home Page Light](docs/screenshots/home-light.png)
+The same home page rendered in light mode, showcasing the glassmorphism design system with frosted-glass cards against a blurred bridal dress background. All stat chips, quick-action buttons, reminder rows, and activity entries are fully readable with theme-aware dark-brown typography. Demonstrates that the entire interface is designed for both dark and light environments without any visual compromise.
+
+---
+
+### Owner Dashboard — Financial KPIs & Revenue Chart
+![Dashboard](docs/screenshots/dashboard.png)
+The owner-only dashboard presents a full financial snapshot for any selected date range. Five KPI cards show: **Total Revenue**, **Rental Revenue**, **Sales Revenue**, **Total Expenses**, and **Net Profit** — each with a percentage change compared to the previous period and a sparkline trend. Below the cards, a full-width line chart visualises daily revenue over the selected period (default: last 7 days). A quick-action bar at the bottom provides shortcuts to: Sell a Dress, Rent a Dress, Return a Dress, New Expense, Quick Report, Cleaning, and Add Employee.
+
+---
+
+### Rentals — Full Rental List
+![Rentals List](docs/screenshots/rentals.png)
+The rentals module lists every rental contract in a sortable, filterable table. Filter tabs at the top segment rentals by status: **All**, **Active** (dress still with customer, payment pending), **Active — open payment** (dress out, no payment recorded), **Paid & Active** (payment received, dress not yet returned), and **Completed** (dress returned and account settled). Each row shows the customer name, phone number, dress code, size, rental period (start → end dates), total price, amount due, and a color-coded status badge. Green **Completed** and **Paid** badges make it instantly clear which contracts are fully resolved.
+
+---
+
+### Inventory — Dress Grid
+![Inventory](docs/screenshots/inventory.png)
+The inventory screen displays all dresses as a responsive card grid. A status legend at the top shows live counts per category: **Available** (متاح, green), **Reserved** (محجوز, amber), **Rented** (مؤجر, blue), **Cleaning** (تنظيف, purple), and **Sold** (مباع, red). Each card shows the dress photo (or a placeholder icon), dress code (W001–W024), price, size, and style/color details. A status badge is pinned to the top corner of every card. Action buttons at the card footer allow quick access to View, Edit, History, and Delete. The search bar supports filtering by code, color, style, and size simultaneously.
+
+---
+
+### Expenses — Expense Tracker
+![Expenses](docs/screenshots/expenses.png)
+The expenses page tracks all shop outgoings in a detailed table. Filter tabs group expenses by recurrence: **One-time** (مرة واحدة), **Monthly** (شهري), and **Weekly** (أسبوعي) — with counts per group. Each row shows the expense category (Rent, Salaries, Electricity, etc.), amount in the original currency (USD, SYP, or TRY), date, recurrence type with a color-coded badge, and an optional description. A running total is displayed in the page header. Date-range filters and a full-text search bar allow quick lookup across all records. Edit and delete buttons appear inline on each row.
+
+---
+
+## License
+
+Private — all rights reserved.
 
 BridalERP is a standalone desktop application with zero cloud dependency. All data is stored locally in an embedded SQLite database. The app is built with Tauri (Rust backend) + React (TypeScript frontend), giving it a native feel with a tiny footprint.
 
