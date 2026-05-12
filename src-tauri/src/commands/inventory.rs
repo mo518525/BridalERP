@@ -252,7 +252,8 @@ pub fn get_dress_history(state: tauri::State<'_, AppState>, dress_id: String) ->
 "SELECT t.id, t.transaction_type, t.customer_id, c.name, c.phone, t.dress_id, d.code,
                 t.price, t.deposit, t.remaining, t.payment_method, t.status,
                 t.rental_start, t.rental_end, t.return_date, t.employee_id, t.notes,
-                t.created_at, t.updated_at, d.size, t.currency, t.exchange_rate_to_syp, t.usd_to_syp_snapshot, t.usd_to_try_snapshot
+                t.created_at, t.updated_at, d.size, t.currency, t.exchange_rate_to_syp, t.usd_to_syp_snapshot, t.usd_to_try_snapshot,
+                t.pickup_date
          FROM transactions t
          LEFT JOIN customers c ON c.id = t.customer_id
          LEFT JOIN dresses d ON d.id = t.dress_id
@@ -279,6 +280,7 @@ pub fn get_dress_history(state: tauri::State<'_, AppState>, dress_id: String) ->
     rental_end: row.get(13)?,
     return_date: row.get(14)?,
     employee_id: row.get(15)?,
+    pickup_date: row.get(24)?,
     notes: row.get(16)?,
     created_at: row.get(17)?,
     updated_at: row.get(18)?,
@@ -290,4 +292,104 @@ pub fn get_dress_history(state: tauri::State<'_, AppState>, dress_id: String) ->
     }).map_err(|e| e.to_string())?
     .filter_map(|r| r.ok()).collect();
     Ok(result)
+}
+
+#[derive(Debug, serde::Serialize)]
+pub struct DressStats {
+    pub rental_count: i64,
+    pub sale_count: i64,
+    pub cleaning_count: i64,
+    pub total_revenue: f64,
+}
+
+#[tauri::command]
+pub fn get_dress_stats(state: tauri::State<'_, AppState>, dress_id: String) -> Result<DressStats, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+
+    let rental_count: i64 = db.query_row(
+        "SELECT COUNT(*) FROM transactions WHERE dress_id=?1 AND transaction_type='rental' AND status!='cancelled'",
+        params![dress_id], |r| r.get(0),
+    ).unwrap_or(0);
+
+    let sale_count: i64 = db.query_row(
+        "SELECT COUNT(*) FROM transactions WHERE dress_id=?1 AND transaction_type='sale' AND status!='cancelled'",
+        params![dress_id], |r| r.get(0),
+    ).unwrap_or(0);
+
+    let cleaning_count: i64 = db.query_row(
+        "SELECT COUNT(*) FROM activity_log WHERE entity_id=?1 AND action='mark_cleaning_done'",
+        params![dress_id], |r| r.get(0),
+    ).unwrap_or(0);
+
+    let total_revenue: f64 = db.query_row(
+        "SELECT COALESCE(SUM(price),0) FROM transactions WHERE dress_id=?1 AND status!='cancelled'",
+        params![dress_id], |r| r.get(0),
+    ).unwrap_or(0.0);
+
+    Ok(DressStats { rental_count, sale_count, cleaning_count, total_revenue })
+}
+
+#[derive(Debug, serde::Serialize)]
+pub struct DressStatRow {
+    pub dress_id: String,
+    pub rental_count: i64,
+    pub sale_count: i64,
+    pub total_revenue: f64,
+}
+
+#[tauri::command]
+pub fn get_all_dress_stats(state: tauri::State<'_, AppState>) -> Result<Vec<DressStatRow>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let mut stmt = db.prepare(
+        "SELECT d.id,
+            COUNT(CASE WHEN t.transaction_type='rental' AND t.status!='cancelled' THEN 1 END),
+            COUNT(CASE WHEN t.transaction_type='sale'   AND t.status!='cancelled' THEN 1 END),
+            COALESCE(SUM(CASE WHEN t.status!='cancelled' THEN t.price ELSE 0 END), 0)
+         FROM dresses d
+         LEFT JOIN transactions t ON t.dress_id = d.id
+         GROUP BY d.id"
+    ).map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map([], |row| {
+        Ok(DressStatRow {
+            dress_id: row.get(0)?,
+            rental_count: row.get(1)?,
+            sale_count: row.get(2)?,
+            total_revenue: row.get(3)?,
+        })
+    }).map_err(|e| e.to_string())?
+    .filter_map(|r| r.ok()).collect();
+
+    Ok(rows)
+}
+
+#[derive(Debug, serde::Serialize)]
+pub struct DressCleaningEvent {
+    pub id: String,
+    pub description: String,
+    pub created_at: String,
+    pub user_name: Option<String>,
+}
+
+#[tauri::command]
+pub fn get_dress_cleaning_events(state: tauri::State<'_, AppState>, dress_id: String) -> Result<Vec<DressCleaningEvent>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let mut stmt = db.prepare(
+        "SELECT id, description, created_at, user_name
+         FROM activity_log
+         WHERE entity_id = ?1 AND entity_type = 'dress' AND action = 'mark_cleaning_done'
+         ORDER BY created_at DESC"
+    ).map_err(|e| e.to_string())?;
+
+    let rows = stmt.query_map(params![dress_id], |row| {
+        Ok(DressCleaningEvent {
+            id: row.get(0)?,
+            description: row.get(1)?,
+            created_at: row.get(2)?,
+            user_name: row.get(3)?,
+        })
+    }).map_err(|e| e.to_string())?
+    .filter_map(|r| r.ok()).collect();
+
+    Ok(rows)
 }

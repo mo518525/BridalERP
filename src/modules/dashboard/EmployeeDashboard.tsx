@@ -26,12 +26,12 @@ function glass(isDark: boolean, extra?: React.CSSProperties): React.CSSPropertie
   };
 }
 
-const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  available: { label: 'متاح',     color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
-  rented:    { label: 'مؤجر',     color: '#c9a84c', bg: 'rgba(201,168,76,0.12)' },
-  cleaning:  { label: 'تنظيف',    color: '#60a4dc', bg: 'rgba(96,164,220,0.12)' },
-  sold:      { label: 'مباع',     color: '#9ca3af', bg: 'rgba(156,163,175,0.12)' },
-  reserved:  { label: 'محجوز',    color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
+const STATUS_MAP_BASE: Record<string, { label: string; darkColor: string; lightColor: string; bg: string }> = {
+  available: { label: 'متاح',     darkColor: '#10b981', lightColor: '#047857', bg: 'rgba(16,185,129,0.12)' },
+  rented:    { label: 'مؤجر',     darkColor: '#c9a84c', lightColor: '#c9a84c', bg: 'rgba(201,168,76,0.12)' },
+  cleaning:  { label: 'تنظيف',    darkColor: '#60a4dc', lightColor: '#1d6fa8', bg: 'rgba(96,164,220,0.12)' },
+  sold:      { label: 'مباع',     darkColor: '#9ca3af', lightColor: '#475569', bg: 'rgba(156,163,175,0.12)' },
+  reserved:  { label: 'محجوز',    darkColor: '#a78bfa', lightColor: '#6d28d9', bg: 'rgba(167,139,250,0.12)' },
 };
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
@@ -47,6 +47,7 @@ export function EmployeeDashboard() {
   const { user: me } = useAuthStore();
   const isDark = theme === 'dark';
   const t = tok(isDark);
+  const STATUS_MAP = Object.fromEntries(Object.entries(STATUS_MAP_BASE).map(([k, v]) => [k, { ...v, color: isDark ? v.darkColor : v.lightColor }]));
   const [showSaleForm, setShowSaleForm]     = useState(false);
   const [showRentalForm, setShowRentalForm] = useState(false);
 
@@ -144,7 +145,7 @@ export function EmployeeDashboard() {
         <div className="flex gap-2">
           <button onClick={() => setShowSaleForm(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-[14px] text-sm font-semibold"
-            style={{ fontFamily: 'Cairo, sans-serif', background: 'rgba(106,173,106,0.15)', color: '#6aad6a', border: '1px solid rgba(106,173,106,0.30)' }}>
+            style={{ fontFamily: 'Cairo, sans-serif', background: 'rgba(106,173,106,0.15)', color: isDark ? '#6aad6a' : '#1e6e35', border: '1px solid rgba(106,173,106,0.30)' }}>
             <ShoppingBag size={14} /> بيع سريع
           </button>
           <button onClick={() => setShowRentalForm(true)}

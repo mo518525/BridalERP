@@ -14,13 +14,6 @@ import { formatDate, isOverdue, todayISO } from '../../utils/formatters';
 import type { Reminder, Transaction } from '../../types';
 import { cn } from '../../utils/cn';
 
-const PRIORITY_BORDER: Record<string, string> = {
-  urgent: 'rgba(239,68,68,0.35)',
-  high:   'rgba(245,158,11,0.30)',
-  normal: 'rgba(201,168,76,0.12)',
-  low:    'rgba(201,168,76,0.08)',
-};
-
 const TYPE_ICONS: Record<string, string> = {
   pickup: '📦', return: '↩️', payment: '💰', cleaning: '🧹',
 };
@@ -30,13 +23,8 @@ const TYPE_OPTIONS = [
   { value: 'payment', label: 'دفع' }, { value: 'cleaning', label: 'تنظيف' },
 ];
 
-const PRIORITY_OPTIONS = [
-  { value: 'low', label: 'منخفض' }, { value: 'normal', label: 'عادي' },
-  { value: 'high', label: 'مرتفع' }, { value: 'urgent', label: 'عاجل' },
-];
-
 // Table layout
-const REMINDERS_COLS = 'auto 2fr 0.8fr 0.8fr 1fr auto';
+const REMINDERS_COLS = 'auto 2fr 0.8fr 1fr auto';
 const REMINDERS_HDR: React.CSSProperties = {
   gridTemplateColumns: REMINDERS_COLS,
   fontFamily: 'Cairo, sans-serif',
@@ -193,7 +181,6 @@ export function RemindersList() {
             <span></span>
             <span>العنوان</span>
             <span>النوع</span>
-            <span>الأولوية</span>
             <span>التاريخ</span>
             <span></span>
           </div>
@@ -201,7 +188,6 @@ export function RemindersList() {
           <motion.div variants={container} initial="hidden" animate="show">
             {reminders.map((r) => {
               const overdue = isOverdue(r.date) && r.status === 'pending';
-              const priorityColor = PRIORITY_BORDER[r.priority];
               return (
                 <motion.div key={r.id} variants={item}
                   className="grid gap-x-4 px-4 py-3 border-b last:border-b-0 transition-colors"
@@ -210,7 +196,7 @@ export function RemindersList() {
                     alignItems: 'center',
                     borderColor: 'rgba(255,255,255,0.05)',
                     background: overdue ? 'rgba(239,68,68,0.06)' : 'transparent',
-                    borderRight: `3px solid ${overdue ? 'rgba(239,68,68,0.55)' : priorityColor}`,
+                    borderRight: overdue ? '3px solid rgba(239,68,68,0.55)' : '3px solid transparent',
                   }}
                 >
                   {/* Icon */}
@@ -233,8 +219,6 @@ export function RemindersList() {
                   <span className="text-xs text-white/50" style={{ fontFamily: 'Cairo, sans-serif' }}>
                     {TYPE_OPTIONS.find((o) => o.value === r.reminder_type)?.label || r.reminder_type}
                   </span>
-                  {/* Priority */}
-                  <StatusBadge status={r.priority} />
                   {/* Date */}
                   <span className="text-xs text-white/40" style={{ fontFamily: 'Cairo, sans-serif' }}>
                     {formatDate(r.date, language)}
@@ -307,7 +291,7 @@ function ReminderForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =
   const { addToast } = useUIStore();
   const [form, setForm] = useState({
     reminder_type: 'pickup', title: '', description: '',
-    date: todayISO(), priority: 'normal',
+    date: todayISO(),
   });
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -320,7 +304,7 @@ function ReminderForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =
     try {
       await api.reminders.create({
         reminder_type: form.reminder_type, title: form.title,
-        description: form.description || undefined, date: form.date, priority: form.priority,
+        description: form.description || undefined, date: form.date, priority: 'normal',
       });
       addToast('success', 'تم إضافة التذكير');
       onSaved();
@@ -339,10 +323,7 @@ function ReminderForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =
     >
       <form id="reminder-form" onSubmit={handleSubmit} className="space-y-4">
         <Input label="العنوان" value={form.title} onChange={(e) => set('title', e.target.value)} required />
-        <div className="grid grid-cols-2 gap-4">
-          <Select label="النوع" value={form.reminder_type} onChange={(e) => set('reminder_type', e.target.value)} options={TYPE_OPTIONS} />
-          <Select label="الأولوية" value={form.priority} onChange={(e) => set('priority', e.target.value)} options={PRIORITY_OPTIONS} />
-        </div>
+        <Select label="النوع" value={form.reminder_type} onChange={(e) => set('reminder_type', e.target.value)} options={TYPE_OPTIONS} />
         <GlassDatePicker label="التاريخ" value={form.date} onChange={(v) => set('date', v)} required />
         <TextArea label="الوصف" value={form.description} onChange={(e) => set('description', e.target.value)} rows={2} />
       </form>

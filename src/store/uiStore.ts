@@ -28,6 +28,7 @@ interface UIState {
   remindersRefreshKey: number;
   defaultCurrency: Currency;
   autoLogoutMinutes: number;
+  showCurrencyCalc: boolean;
   avatarColors: Record<string, string>;
   shopName: string;
   shopLogo: string;
@@ -41,6 +42,7 @@ interface UIState {
   bumpReminders: () => void;
   setDefaultCurrency: (c: Currency) => void;
   setAutoLogoutMinutes: (m: number) => void;
+  setShowCurrencyCalc: (v: boolean) => void;
   setAvatarColor: (userId: string, color: string) => void;
   setShopName: (name: string) => void;
   setShopLogo: (logo: string) => void;
@@ -57,6 +59,7 @@ export const useUIStore = create<UIState>()(
       exchangeRates: { usd_to_syp: 14000, usd_to_try: 34, try_to_syp: 412 },
       defaultCurrency: 'USD',
       autoLogoutMinutes: 0,
+      showCurrencyCalc: false,
       avatarColors: {},
       shopName: '',
       shopLogo: '',
@@ -83,10 +86,11 @@ export const useUIStore = create<UIState>()(
       bumpReminders: () => set((s) => ({ remindersRefreshKey: s.remindersRefreshKey + 1 })),
       setDefaultCurrency: (defaultCurrency) => set({ defaultCurrency }),
       setAutoLogoutMinutes: (autoLogoutMinutes) => set({ autoLogoutMinutes }),
+      setShowCurrencyCalc: (showCurrencyCalc) => set({ showCurrencyCalc }),
       setAvatarColor: (userId, color) => set((s) => ({ avatarColors: { ...s.avatarColors, [userId]: color } })),
       setShopName: (shopName) => set({ shopName }),
       setShopLogo: (shopLogo) => set({ shopLogo }),
     }),
-    { name: 'bridal-ui', partialize: (s) => ({ theme: s.theme, language: s.language, exchangeRates: s.exchangeRates, defaultCurrency: s.defaultCurrency, autoLogoutMinutes: s.autoLogoutMinutes, avatarColors: s.avatarColors }) }
+    { name: 'bridal-ui', partialize: (s) => ({ theme: s.theme, language: s.language, exchangeRates: s.exchangeRates, defaultCurrency: s.defaultCurrency, autoLogoutMinutes: s.autoLogoutMinutes, showCurrencyCalc: s.showCurrencyCalc, avatarColors: s.avatarColors }) }
   )
 );

@@ -18,16 +18,16 @@ import type { Delivery, Dress } from '../../types';
 
 // Table layout
 const DELIVERIES_COLS = '0.7fr 1.3fr 1.1fr 1fr 0.6fr auto';
-const DELIVERIES_HDR: React.CSSProperties = {
+const deliveriesHdr = (isDark: boolean): React.CSSProperties => ({
   gridTemplateColumns: DELIVERIES_COLS,
   fontFamily: 'Cairo, sans-serif',
-  background: 'rgba(255,255,255,0.055)',
+  background: isDark ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.50)',
   backdropFilter: 'blur(16px) saturate(160%)',
   WebkitBackdropFilter: 'blur(16px) saturate(160%)',
-  borderBottom: '1px solid rgba(212,175,55,0.22)',
-  color: 'rgba(212,175,55,0.55)',
+  borderBottom: isDark ? '1px solid rgba(212,175,55,0.22)' : '1px solid rgba(143,110,40,0.20)',
+  color: isDark ? 'rgba(212,175,55,0.70)' : 'rgba(143,110,40,0.85)',
   whiteSpace: 'nowrap' as const,
-};
+});
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
 const item = {
@@ -37,7 +37,11 @@ const item = {
 
 export function DeliveriesList() {
   const { t } = useTranslation();
-  const { language, addToast } = useUIStore();
+  const { language, addToast, theme } = useUIStore();
+  const isDark = theme === 'dark';
+  const textMain  = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)';
+  const textMuted = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(60,42,24,0.65)';
+  const gold      = isDark ? '#c9a84c' : '#8f6e28';
   const { canDelete } = usePermissions();
   const navigate = useNavigate();
   const currency = '$';
@@ -86,11 +90,11 @@ export function DeliveriesList() {
       >
         <button onClick={() => navigate(-1)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold"
-          style={{ fontFamily:'Cairo,sans-serif', background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.60)', border:'1px solid rgba(255,255,255,0.10)' }}>
+          style={{ fontFamily:'Cairo,sans-serif', background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(60,42,24,0.07)', color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)', border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(60,42,24,0.14)' }}>
           <ArrowRight size={15} /> رجوع
         </button>
-        <h1 className="text-2xl font-bold text-white/90 flex items-center gap-2 flex-1">
-          <Truck size={22} className="text-gold-400" /> {t('deliveries.title')}
+        <h1 className="text-2xl font-bold flex items-center gap-2 flex-1" style={{ color: textMain }}>
+          <Truck size={22} style={{ color: gold }} /> {t('deliveries.title')}
         </h1>
         <Button variant="gold" icon={<Plus size={16} />} onClick={() => setShowForm(true)}>
           {t('deliveries.addDelivery')}
@@ -102,17 +106,17 @@ export function DeliveriesList() {
           <Loader2 size={32} className="animate-spin text-gold-400" />
         </div>
       ) : deliveries.length === 0 ? (
-        <div className="flex flex-col items-center py-24 text-white/30">
+        <div className="flex flex-col items-center py-24" style={{ color: textMuted }}>
           <Truck size={52} className="mb-3 opacity-30" />
           <p>{t('deliveries.noDeliveries')}</p>
         </div>
       ) : (
         <div className="rounded-2xl overflow-hidden border border-white/[0.10]"
-          style={{ background: 'rgba(255,255,255,0.03)' }}>
+          style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(16px) saturate(148%)', WebkitBackdropFilter: 'blur(16px) saturate(148%)' }}>
           {/* Sticky header */}
           <div
             className="sticky top-0 z-10 grid gap-x-4 px-4 py-2.5 text-xs font-semibold"
-            style={DELIVERIES_HDR}
+            style={deliveriesHdr(isDark)}
           >
             <span>{t('deliveries.deliveryNumber')}</span>
             <span>{t('deliveries.supplier')}</span>
@@ -132,22 +136,28 @@ export function DeliveriesList() {
                   borderColor: 'rgba(255,255,255,0.05)',
                 }}
               >
-                <span className="text-sm font-bold text-white/90">{d.delivery_number}</span>
-                <span className="text-sm text-white/65 truncate">{d.supplier || '—'}</span>
-                <span className="text-sm text-white/65">{formatDate(d.delivery_date, language)}</span>
-                <span className="text-sm font-bold text-gold-400">{formatCurrency(d.total_cost, currency, language)}</span>
-                <span className="text-xs text-white/40 flex items-center gap-1"><Package size={10} />{d.item_count}</span>
+                <span className="text-sm font-bold" style={{ color: textMain }}>{d.delivery_number}</span>
+                <span className="text-sm truncate" style={{ color: textMuted }}>{d.supplier || '—'}</span>
+                <span className="text-sm" style={{ color: textMuted }}>{formatDate(d.delivery_date, language)}</span>
+                <span className="text-sm font-bold" style={{ color: gold }}>{formatCurrency(d.total_cost, currency, language)}</span>
+                <span className="text-xs flex items-center gap-1" style={{ color: textMuted }}><Package size={10} />{d.item_count}</span>
                 <div className="flex items-center gap-1">
                   <button onClick={() => setViewing(d)}
-                    className="p-1.5 rounded-lg text-cyan-400/60 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors" title="عرض التفاصيل">
+                    className="p-1.5 rounded-lg transition-colors"
+                    style={{ color: isDark ? 'rgba(34,211,238,0.6)' : '#0891b2' }}
+                    title="عرض التفاصيل">
                     <Eye size={14} />
                   </button>
                   <button onClick={() => setEditing(d)}
-                    className="p-1.5 rounded-lg text-gold-400/60 hover:text-gold-400 hover:bg-white/8 transition-colors" title="إضافة فساتين">
+                    className="p-1.5 rounded-lg transition-colors"
+                    style={{ color: isDark ? 'rgba(201,168,76,0.60)' : 'rgba(143,110,40,0.70)' }}
+                    title="إضافة فساتين">
                     <Pencil size={14} />
                   </button>
                   {canDelete && (
-                    <button onClick={() => setDeleting(d)} className="p-1.5 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                    <button onClick={() => setDeleting(d)}
+                      className="p-1.5 rounded-lg transition-colors"
+                      style={{ color: isDark ? 'rgba(248,113,113,0.60)' : 'rgba(180,28,28,0.70)' }}>
                       <Trash2 size={13} />
                     </button>
                   )}
@@ -299,8 +309,8 @@ function DeliveryForm({
 
 // Delivery Details Modal (eye icon)
 function DeliveryDetailsModal({ delivery, onClose }: { delivery: Delivery; onClose: () => void }) {
-  const { language } = useUIStore();
-  const { addToast } = useUIStore();
+  const { language, addToast, theme } = useUIStore();
+  const isDark = theme === 'dark';
   const currency = '$';
   const [dresses, setDresses] = useState<Dress[]>([]);
   const [loading, setLoading] = useState(true);
@@ -364,7 +374,7 @@ function DeliveryDetailsModal({ delivery, onClose }: { delivery: Delivery; onClo
                 </p>
                 <div className="flex-shrink-0">
                   <span className="text-xs px-2 py-0.5 rounded-full"
-                    style={{ background: statusBg(dr.status), color: statusFg(dr.status) }}>
+                    style={{ background: statusBg(dr.status), color: statusFg(dr.status, isDark) }}>
                     {statusLabel(dr.status)}
                   </span>
                 </div>
@@ -581,10 +591,14 @@ function statusBg(s: string) {
   };
   return m[s] ?? 'rgba(255,255,255,0.08)';
 }
-function statusFg(s: string) {
-  const m: Record<string, string> = {
+function statusFg(s: string, isDark = true) {
+  const dark: Record<string, string> = {
     available: '#4ade80', reserved: '#fbbf24', rented: '#60a5fa',
     cleaning: '#c084fc', sold: '#f87171',
   };
-  return m[s] ?? 'rgba(255,255,255,0.6)';
+  const light: Record<string, string> = {
+    available: '#15803d', reserved: '#b45309', rented: '#1d4ed8',
+    cleaning: '#7c3aed', sold: '#dc2626',
+  };
+  return (isDark ? dark : light)[s] ?? (isDark ? 'rgba(255,255,255,0.6)' : 'rgba(60,42,24,0.55)');
 }

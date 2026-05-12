@@ -43,6 +43,7 @@ pub fn get_calendar_events(
                 customer_name: customer,
                 dress_code: code,
                 priority: None,
+                description: None,
             })
         })
         .collect();
@@ -79,6 +80,7 @@ pub fn get_calendar_events(
                 customer_name: customer,
                 dress_code: code,
                 priority: Some("high".to_string()),
+                description: None,
             })
         })
         .collect();
@@ -87,7 +89,7 @@ pub fn get_calendar_events(
     // Pending reminders in range (join transactions → customers + dresses for full details)
     let mut stmt3 = db.prepare(
         "SELECT r.id, r.reminder_type, r.title, r.date, r.priority,
-                COALESCE(c.name, r.customer_name), d.code
+                COALESCE(c.name, r.customer_name), d.code, r.description
          FROM reminders r
          LEFT JOIN transactions t ON t.id = r.transaction_id
          LEFT JOIN customers c ON c.id = t.customer_id
@@ -105,11 +107,12 @@ pub fn get_calendar_events(
                 row.get::<_, String>(4)?,
                 row.get::<_, Option<String>>(5)?,
                 row.get::<_, Option<String>>(6)?,
+                row.get::<_, Option<String>>(7)?,
             ))
         })
         .map_err(|e| e.to_string())?
         .filter_map(|r| r.ok())
-        .map(|(id, rtype, title, date, priority, customer, dress)| CalendarEvent {
+        .map(|(id, rtype, title, date, priority, customer, dress, description)| CalendarEvent {
             id: id.clone(),
             event_type: rtype,
             title,
@@ -118,6 +121,7 @@ pub fn get_calendar_events(
             customer_name: customer,
             dress_code: dress,
             priority: Some(priority),
+            description,
         })
         .collect();
     events.extend(reminder_events);

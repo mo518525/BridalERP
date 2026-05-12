@@ -132,7 +132,7 @@
 
   /* Search placeholder — adapts to theme */
   .dark input::placeholder   { color: rgba(255,255,255,0.28); }
-  input::placeholder         { color: rgba(44,44,44,0.32); }
+  input::placeholder         { color: rgba(44,44,44,0.55); }
 
   /* Font */
   .font-arabic { font-family: 'Cairo', 'Noto Sans Arabic', system-ui, sans-serif; }

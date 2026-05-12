@@ -59,6 +59,7 @@ export default {
       color: 'اللون',
       size: 'المقاس',
       style: 'الطراز',
+      price: 'سعر الشراء',
       purchasePrice: 'سعر الشراء',
       salePrice: 'سعر البيع',
       rentalPrice: 'سعر التأجير',

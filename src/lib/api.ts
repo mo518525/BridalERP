@@ -98,10 +98,13 @@ export const api = {
     create: (input: CreateDressInput) => invoke<Dress>('create_dress', { input: { ...input, user_id: getCurrentUserId() } }),
     update: (input: UpdateDressInput) => invoke<void>('update_dress', { input }),
     updateStatus: (dress_id: string, status: string) =>
-      invoke<void>('update_dress_status', { dress_id, status }),
+      invoke<void>('update_dress_status', { dressId: dress_id, status }),
     delete: (id: string) =>
       invoke<void>('delete_dress', { id, userId: getCurrentUserId() }),
-    getHistory: (dress_id: string) => invoke<Transaction[]>('get_dress_history', { dress_id }),
+    getHistory: (dress_id: string) => invoke<Transaction[]>('get_dress_history', { dressId: dress_id }),
+    getDressStats: (dress_id: string) => invoke<{ rental_count: number; sale_count: number; cleaning_count: number; total_revenue: number }>('get_dress_stats', { dressId: dress_id }),
+    getAllDressStats: () => invoke<{ dress_id: string; rental_count: number; sale_count: number; total_revenue: number }[]>('get_all_dress_stats'),
+    getCleaningEvents: (dress_id: string) => invoke<{ id: string; description: string; created_at: string; user_name?: string }[]>('get_dress_cleaning_events', { dressId: dress_id }),
   },
 
   transactions: {
@@ -116,7 +119,7 @@ export const api = {
       invoke<void>('complete_transaction', { id, amountPaid: amount_paid }),
     cancel: (id: string) => invoke<void>('cancel_transaction', { id, userId: getCurrentUserId() }),
     reserve: (dress_id: string, customer_id: string, notes?: string) =>
-      invoke<void>('reserve_dress', { dress_id, customer_id, notes, userId: getCurrentUserId() }),
+      invoke<void>('reserve_dress', { dressId: dress_id, customerId: customer_id, notes, userId: getCurrentUserId() }),
   },
 
   customers: {
@@ -128,11 +131,12 @@ export const api = {
     delete: (id: string) =>
       invoke<void>('delete_customer', { id, userId: getCurrentUserId() }),
     getHistory: (customer_id: string) =>
-      invoke<Transaction[]>('get_customer_history', { customer_id }),
+      invoke<Transaction[]>('get_customer_history', { customerId: customer_id }),
   },
 
   expenses: {
     getAll: (filter?: FilterParams) => invoke<Expense[]>('get_expenses', { filter }),
+    generateRecurring: () => invoke<number>('generate_recurring_expenses'),
     create: (input: CreateExpenseInput) => invoke<Expense>('create_expense', { input }),
     update: (id: string, category: string, amount: number, description: string | undefined, date: string, recurring_type: RecurringType) =>
       invoke<void>('update_expense', { id, category, amount, description, date, recurringType: recurring_type, userId: getCurrentUserId() }),

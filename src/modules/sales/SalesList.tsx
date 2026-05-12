@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, ShoppingBag, Loader2, CheckCircle, XCircle, ArrowRight, Search } from 'lucide-react';
+import { Plus, ShoppingBag, Loader2, CheckCircle, XCircle, ArrowRight, Search, Banknote } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useUIStore } from '../../store/uiStore';
 import { Button } from '../../components/Button';
@@ -21,10 +21,10 @@ function fmtSaleAmt(amount: number, tx: Transaction): string {
   return `${rounded.toLocaleString('en-US', { maximumFractionDigits: c === 'SYP' ? 0 : 2 })} ${SALE_CURR_LABELS[c] ?? c}`;
 }
 
-const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  active:    { label: 'نشط',    color: '#4ade80', bg: 'rgba(74,222,128,0.12)' },
-  completed: { label: 'مكتمل', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  cancelled: { label: 'ملغي',  color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
+const STATUS_META_BASE: Record<string, { label: string; darkColor: string; lightColor: string; bg: string }> = {
+  active:    { label: 'نشط',    darkColor: '#4ade80', lightColor: '#15803d', bg: 'rgba(74,222,128,0.12)' },
+  completed: { label: 'مكتمل', darkColor: '#60a5fa', lightColor: '#1d4ed8', bg: 'rgba(96,165,250,0.12)' },
+  cancelled: { label: 'ملغي',  darkColor: '#f87171', lightColor: '#dc2626', bg: 'rgba(248,113,113,0.12)' },
 };
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
@@ -103,8 +103,9 @@ export function SalesList() {
     finally { setCompleteLoading(false); }
   };
 
-  const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
+  const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.75)';
   const textMain  = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)';
+  const STATUS_META = Object.fromEntries(Object.entries(STATUS_META_BASE).map(([k, v]) => [k, { ...v, color: isDark ? v.darkColor : v.lightColor }]));
 
   const inputStyle: React.CSSProperties = {
     fontFamily: 'Cairo, sans-serif',
@@ -133,7 +134,7 @@ export function SalesList() {
           style={{
             fontFamily: 'Cairo, sans-serif',
             background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(60,42,24,0.06)',
-            color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.55)',
+            color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)',
             border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(60,42,24,0.10)',
           }}>
           <ArrowRight size={15} /> رجوع
@@ -188,7 +189,7 @@ export function SalesList() {
         {(search || statusFilter || dateFrom || dateTo) && (
           <button onClick={() => { setSearch(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); }}
             className="px-3 py-1.5 rounded-xl text-xs"
-            style={{ fontFamily: 'Cairo, sans-serif', color: '#f87171',
+            style={{ fontFamily: 'Cairo, sans-serif', color: isDark ? '#f87171' : '#dc2626',
               background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.20)' }}>
             مسح
           </button>
@@ -254,7 +255,7 @@ export function SalesList() {
                         {fmtSaleAmt(tx.price, tx)}
                       </p>
                       {tx.remaining > 0 && (
-                        <p className="text-xs" style={{ color: '#f87171', fontFamily: 'Cairo, sans-serif' }}>
+                        <p className="text-xs" style={{ color: isDark ? '#f87171' : '#dc2626', fontFamily: 'Cairo, sans-serif' }}>
                           متبقي: {fmtSaleAmt(tx.remaining, tx)}
                         </p>
                       )}
@@ -283,16 +284,17 @@ export function SalesList() {
                       {tx.status === 'active' && (
                         <>
                           {tx.remaining > 0 && (
-                            <button onClick={() => { setCompleting(tx); setAmountPaid(tx.remaining.toString()); }}
-                              className="p-1.5 rounded-lg transition-colors"
-                              style={{ color: '#4ade80', background: 'rgba(74,222,128,0.10)' }}
-                              title="تسجيل دفعة">
-                              <CheckCircle size={16} />
-                            </button>
+                            <Button variant="secondary" size="sm"
+                              className="h-7 px-2 text-xs w-fit"
+                              style={{ background: 'rgba(239,68,68,0.18)', border: '1px solid rgba(239,68,68,0.38)', color: isDark ? '#f87171' : '#dc2626', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+                              icon={<Banknote size={11} />}
+                              onClick={() => { setCompleting(tx); setAmountPaid(tx.remaining.toString()); }}>
+                              تسوية
+                            </Button>
                           )}
                           <button onClick={() => setCancelling(tx)}
                             className="p-1.5 rounded-lg transition-colors"
-                            style={{ color: '#f87171', background: 'rgba(248,113,113,0.10)' }}
+                            style={{ color: isDark ? '#f87171' : '#dc2626', background: 'rgba(248,113,113,0.10)' }}
                             title="إلغاء">
                             <XCircle size={16} />
                           </button>

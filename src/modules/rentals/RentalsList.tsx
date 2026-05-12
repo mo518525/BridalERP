@@ -51,24 +51,26 @@ function fmtPay(val: number, curr: string): string {
 // Table layout
 // cols: العميل | الهاتف | الفستان | المقاس | الفترة | السعر | مستحق | الحالة | actions
 const RENTALS_COLS = 'repeat(8, 1fr) 120px';
-const RENTALS_HDR: React.CSSProperties = {
-  gridTemplateColumns: RENTALS_COLS,
-  fontFamily: 'Cairo, sans-serif',
-  background: 'rgba(255,255,255,0.055)',
-  backdropFilter: 'blur(16px) saturate(160%)',
-  WebkitBackdropFilter: 'blur(16px) saturate(160%)',
-  borderBottom: '1px solid rgba(212,175,55,0.22)',
-  color: 'rgba(212,175,55,0.55)',
-  whiteSpace: 'nowrap' as const,
-};
+function rentalsHdr(isDark: boolean): React.CSSProperties {
+  return {
+    gridTemplateColumns: RENTALS_COLS,
+    fontFamily: 'Cairo, sans-serif',
+    background: 'rgba(255,255,255,0.055)',
+    backdropFilter: 'blur(16px) saturate(160%)',
+    WebkitBackdropFilter: 'blur(16px) saturate(160%)',
+    borderBottom: isDark ? '1px solid rgba(212,175,55,0.22)' : '1px solid rgba(60,42,24,0.10)',
+    color: isDark ? 'rgba(212,175,55,0.55)' : 'rgba(60,42,24,0.75)',
+    whiteSpace: 'nowrap' as const,
+  };
+}
 
-// Status legend
-const FILTER_OPTIONS = [
-  { key: '',              label: 'الكل',              desc: '',                             color: 'rgba(255,255,255,0.55)', bg: 'rgba(255,255,255,0.06)' },
-  { key: 'active',        label: 'نشط',               desc: 'الفستان عند العميل',           color: '#4ade80',               bg: 'rgba(74,222,128,0.12)'  },
-  { key: 'active_unpaid', label: 'نشط · دفع مفتوح',  desc: 'مبلغ متبقٍ لم يُسدَّد',       color: '#f87171',               bg: 'rgba(239,68,68,0.12)'   },
-  { key: 'active_paid',   label: 'نشط · مدفوع',      desc: 'مدفوع والفستان لم يُرجَع بعد', color: '#a78bfa',               bg: 'rgba(167,139,250,0.12)' },
-  { key: 'completed',     label: 'مكتمل',             desc: 'الفستان أُعيد وأُغلق الحساب', color: '#60a5fa',               bg: 'rgba(96,165,250,0.12)'  },
+// Status legend — colors are [darkColor, lightColor]
+const FILTER_OPTIONS_BASE = [
+  { key: '',              label: 'الكل',              desc: '',                             darkColor: 'rgba(255,255,255,0.55)', lightColor: 'rgba(60,42,24,0.55)',  bg: 'rgba(255,255,255,0.06)' },
+  { key: 'active',        label: 'نشط',               desc: 'الفستان عند العميل',           darkColor: '#4ade80',               lightColor: '#15803d',              bg: 'rgba(74,222,128,0.12)'  },
+  { key: 'active_unpaid', label: 'نشط · دفع مفتوح',  desc: 'مبلغ متبقٍ لم يُسدَّد',       darkColor: '#f87171',               lightColor: '#dc2626',              bg: 'rgba(239,68,68,0.12)'   },
+  { key: 'active_paid',   label: 'نشط · مدفوع',      desc: 'مدفوع والفستان لم يُرجَع بعد', darkColor: '#a78bfa',               lightColor: '#6d28d9',              bg: 'rgba(167,139,250,0.12)' },
+  { key: 'completed',     label: 'مكتمل',             desc: 'الفستان أُعيد وأُغلق الحساب', darkColor: '#22d3ee',               lightColor: '#0e7490',              bg: 'rgba(34,211,238,0.10)'  },
 ];
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
@@ -177,8 +179,9 @@ export function RentalsList() {
     return result;
   }, [rentals, search, statusFilter, dateFrom, dateTo]);
 
-  const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
+  const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.75)';
   const textMain  = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)';
+  const FILTER_OPTIONS = FILTER_OPTIONS_BASE.map(o => ({ ...o, color: isDark ? o.darkColor : o.lightColor }));
 
   const inputStyle: React.CSSProperties = {
     fontFamily: 'Cairo, sans-serif',
@@ -204,7 +207,7 @@ export function RentalsList() {
           style={{
             fontFamily: 'Cairo, sans-serif',
             background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(60,42,24,0.06)',
-            color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.55)',
+            color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)',
             border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(60,42,24,0.10)',
           }}>
           <ArrowRight size={15} />
@@ -267,7 +270,7 @@ export function RentalsList() {
         {(search || statusFilter || dateFrom || dateTo) && (
           <button onClick={() => { setSearch(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); }}
             className="px-3 py-1.5 rounded-xl text-xs"
-            style={{ fontFamily: 'Cairo, sans-serif', color: '#f87171',
+            style={{ fontFamily: 'Cairo, sans-serif', color: isDark ? '#f87171' : '#dc2626',
               background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.20)' }}>
             مسح
           </button>
@@ -286,10 +289,10 @@ export function RentalsList() {
         </div>
       ) : (
         <div className="rounded-2xl overflow-hidden border border-white/[0.10]"
-          style={{ background: 'rgba(255,255,255,0.03)' }}>
+          style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(16px) saturate(148%)', WebkitBackdropFilter: 'blur(16px) saturate(148%)' }}>
           {/* Sticky header */}
           <div className="sticky top-0 z-10 grid gap-x-6 px-6 py-2.5 text-xs font-semibold"
-            style={RENTALS_HDR}>
+            style={rentalsHdr(isDark)}>
             <span>العميل</span><span>الهاتف</span><span>الفستان</span><span>المقاس</span>
             <span>الفترة</span>
             <span>السعر</span>
@@ -314,7 +317,7 @@ export function RentalsList() {
                   {/* Customer */}
                   <div>
                     <p className="text-sm font-semibold truncate" style={{ color: textMain, fontFamily: 'Cairo, sans-serif' }}>{tx.customer_name}</p>
-                    {overdue && <p className="text-[10px] flex items-center gap-1 mt-0.5" style={{ color: '#f87171' }}><AlertTriangle size={10} />تأخر الإرجاع</p>}
+                    {overdue && <p className="text-[10px] flex items-center gap-1 mt-0.5" style={{ color: isDark ? '#f87171' : '#dc2626' }}><AlertTriangle size={10} />تأخر الإرجاع</p>}
                   </div>
                   {/* Phone */}
                   {tx.customer_phone ? (
@@ -323,7 +326,7 @@ export function RentalsList() {
                     </p>
                   ) : <span className="text-xs" style={{ color: textMuted }}>—</span>}
                   {/* Dress */}
-                  <span className="text-sm font-bold" style={{ color: '#c9a84c' }}>{tx.dress_code}</span>
+                  <span className="text-sm font-bold" style={{ color: isDark ? '#c9a84c' : '#8f6e28' }}>{tx.dress_code}</span>
                   {/* Size */}
                   <span className="text-sm" style={{ color: textMain, fontFamily: 'Cairo, sans-serif' }}>{tx.dress_size || '—'}</span>
                   {/* Period */}
@@ -331,32 +334,32 @@ export function RentalsList() {
                     <div>{formatDate(tx.rental_start, language)}</div>
                     <div>{formatDate(tx.rental_end, language)}</div>
                     {daysLeft !== null && tx.status === 'active' && (
-                      <div className="font-semibold" style={{ color: overdue ? '#f87171' : '#4ade80' }}>
+                      <div className="font-semibold" style={{ color: overdue ? (isDark ? '#f87171' : '#dc2626') : (isDark ? '#4ade80' : '#15803d') }}>
                         {overdue ? `متأخر ${Math.abs(daysLeft)} يوم` : `${daysLeft} يوم متبقي`}
                       </div>
                     )}
                   </div>
                   {/* Price */}
-                  <div className="text-sm font-bold" style={{ color: '#c9a84c' }}>
+                  <div className="text-sm font-bold" style={{ color: isDark ? '#c9a84c' : '#8f6e28' }}>
                     {fmtPay(tx.price, tx.currency || 'SYP')}
                   </div>
                   {/* Open payment */}
                   <div>
                     {(tx.currency === 'SYP' ? Math.round(tx.remaining) : Math.round(tx.remaining * 100) / 100) > 0 ? (
                       <div className="flex flex-col gap-1.5">
-                        <span className="text-xs font-bold" style={{ color: '#f87171' }}>
+                        <span className="text-xs font-bold" style={{ color: isDark ? '#f87171' : '#dc2626' }}>
                           {fmtPay(tx.remaining, tx.currency || 'SYP')}
                         </span>
                         <Button variant="secondary" size="sm"
                           className="h-7 px-2 text-xs w-fit"
-                          style={{ background: 'rgba(239,68,68,0.18)', borderColor: 'rgba(239,68,68,0.38)', color: '#f87171', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', boxShadow: 'inset 0 1px 0 rgba(239,68,68,0.20)' }}
+                          style={{ background: 'rgba(239,68,68,0.18)', border: '1px solid rgba(239,68,68,0.38)', color: isDark ? '#f87171' : '#dc2626', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
                           icon={<Banknote size={11} />}
                           onClick={() => openSettle(tx)}>
                           تسوية
                         </Button>
                       </div>
                     ) : (
-                      <span className="text-xs font-semibold" style={{ color: '#4ade80' }}>✓ مدفوع</span>
+                      <span className="text-xs font-semibold" style={{ color: isDark ? '#4ade80' : '#15803d' }}>✓ مدفوع</span>
                     )}
                   </div>
                   {/* Status */}
@@ -385,15 +388,15 @@ export function RentalsList() {
           <div className="flex items-center gap-2 mb-3">
             <h2 className="text-lg font-bold" style={{ color: textMain, fontFamily: 'Cairo, sans-serif' }}>مبيعات بدفع مفتوح</h2>
             <span className="text-xs px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171', border: '1px solid rgba(248,113,113,0.22)', fontFamily: 'Cairo, sans-serif' }}>
+              style={{ background: 'rgba(248,113,113,0.12)', color: isDark ? '#f87171' : '#dc2626', border: '1px solid rgba(248,113,113,0.22)', fontFamily: 'Cairo, sans-serif' }}>
               {openSales.length}
             </span>
           </div>
           <div className="rounded-2xl overflow-hidden border border-white/[0.10]"
-            style={{ background: 'rgba(255,255,255,0.03)' }}>
+            style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(16px) saturate(148%)', WebkitBackdropFilter: 'blur(16px) saturate(148%)' }}>
             {/* Header */}
             <div className="sticky top-0 z-10 grid gap-x-6 px-6 py-2.5 text-xs font-semibold"
-              style={{ ...RENTALS_HDR, gridTemplateColumns: 'repeat(5, 1fr) 120px 100px' }}>
+              style={{ ...rentalsHdr(isDark), gridTemplateColumns: 'repeat(5, 1fr) 120px 100px' }}>
               <span>العميل</span><span>الهاتف</span><span>الفستان</span>
               <span>السعر</span><span>المدفوع</span><span>مستحق</span><span></span>
             </div>
@@ -414,14 +417,14 @@ export function RentalsList() {
                   {tx.customer_phone
                     ? <p className="flex items-center gap-1 text-xs" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}><Phone size={10} />{toWesternDigits(tx.customer_phone)}</p>
                     : <span className="text-xs" style={{ color: textMuted }}>—</span>}
-                  <span className="text-sm font-bold" style={{ color: '#c9a84c' }}>{tx.dress_code}</span>
+                  <span className="text-sm font-bold" style={{ color: isDark ? '#c9a84c' : '#8f6e28' }}>{tx.dress_code}</span>
                   <span className="text-sm font-bold" style={{ color: textMain, fontFamily: 'Cairo, sans-serif' }}>{fmtPay(tx.price, tx.currency || 'SYP')}</span>
-                  <span className="text-sm" style={{ color: '#4ade80', fontFamily: 'Cairo, sans-serif' }}>{fmtPay(tx.deposit, tx.currency || 'SYP')}</span>
+                  <span className="text-sm" style={{ color: isDark ? '#4ade80' : '#15803d', fontFamily: 'Cairo, sans-serif' }}>{fmtPay(tx.deposit, tx.currency || 'SYP')}</span>
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs font-bold" style={{ color: '#f87171' }}>{fmtPay(tx.remaining, tx.currency || 'SYP')}</span>
+                    <span className="text-xs font-bold" style={{ color: isDark ? '#f87171' : '#dc2626' }}>{fmtPay(tx.remaining, tx.currency || 'SYP')}</span>
                     <Button variant="secondary" size="sm"
                       className="h-7 px-2 text-xs w-fit"
-                      style={{ background: 'rgba(239,68,68,0.18)', borderColor: 'rgba(239,68,68,0.38)', color: '#f87171', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+                      style={{ background: 'rgba(239,68,68,0.18)', borderColor: 'rgba(239,68,68,0.38)', color: isDark ? '#f87171' : '#dc2626', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
                       icon={<Banknote size={11} />}
                       onClick={() => openSettle(tx)}>
                       تسوية
@@ -541,7 +544,7 @@ export function RentalsList() {
           }
         >
           <div className="space-y-4">
-            <p style={{ color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(60,42,24,0.65)', fontFamily: 'Cairo, sans-serif' }}>
+            <p style={{ color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(60,42,24,0.75)', fontFamily: 'Cairo, sans-serif' }}>
               إرجاع الفستان <strong style={{ color: '#c9a84c' }}>{returning.dress_code}</strong> من{' '}
               <strong style={{ color: isDark ? 'rgba(255,255,255,0.90)' : 'rgba(55,38,18,0.90)' }}>{returning.customer_name}</strong>
             </p>
@@ -549,17 +552,17 @@ export function RentalsList() {
               style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(60,42,24,0.04)', border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(60,42,24,0.08)' }}>
               <input type="checkbox" checked={needsCleaning} onChange={e => setNeedsCleaning(e.target.checked)}
                 className="w-4 h-4 rounded" style={{ accentColor: '#c9a84c' }} />
-              <span className="text-sm" style={{ color: isDark ? 'rgba(255,255,255,0.70)' : 'rgba(60,42,24,0.70)', fontFamily: 'Cairo, sans-serif' }}>
+              <span className="text-sm" style={{ color: isDark ? 'rgba(255,255,255,0.70)' : 'rgba(60,42,24,0.75)', fontFamily: 'Cairo, sans-serif' }}>
                 يحتاج تنظيف
               </span>
             </label>
             {needsCleaning && (
               <>
-                <p className="text-xs p-2 rounded-lg" style={{ color: '#c084fc', background: 'rgba(168,85,247,0.10)', border: '1px solid rgba(168,85,247,0.20)', fontFamily: 'Cairo, sans-serif' }}>
+                <p className="text-xs p-2 rounded-lg" style={{ color: isDark ? '#c084fc' : '#7c3aed', background: 'rgba(168,85,247,0.10)', border: '1px solid rgba(168,85,247,0.20)', fontFamily: 'Cairo, sans-serif' }}>
                   سيتم تحويل الفستان لقائمة التنظيف
                 </p>
                 <div>
-                  <label className="block text-xs mb-1.5" style={{ color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(60,42,24,0.60)', fontFamily: 'Cairo, sans-serif' }}>
+                  <label className="block text-xs mb-1.5" style={{ color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(60,42,24,0.75)', fontFamily: 'Cairo, sans-serif' }}>
                     اسم المنظِّف (اختياري)
                   </label>
                   <input

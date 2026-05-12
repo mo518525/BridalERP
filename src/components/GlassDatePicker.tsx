@@ -120,7 +120,7 @@ export function GlassDatePicker({
 
   // ─── styles (match GlassSelect exactly) ──────────────────────────────────
   const textMain  = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)';
-  const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.38)';
+  const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.75)';
 
   const navBtnSt: React.CSSProperties = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -171,7 +171,7 @@ export function GlassDatePicker({
       {label && (
         <label style={{
           fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif',
-          color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)',
+          color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)',
         }}>
           {label}{required && <span style={{ color: '#f87171', marginInlineStart: 4 }}>*</span>}
         </label>

@@ -1,7 +1,29 @@
 use rusqlite::params;
 use uuid::Uuid;
-use chrono::Utc;
+use chrono::{Utc, NaiveDate, Datelike};
 use crate::{AppState, models::*};
+
+fn compute_next_due(from: &str, recurring_type: &str) -> Option<String> {
+    use chrono::Datelike;
+    let date = NaiveDate::parse_from_str(from, "%Y-%m-%d").ok()?;
+    let next = match recurring_type {
+        "monthly" => {
+            let (y, m, d) = (date.year(), date.month(), date.day());
+            let (ny, nm) = if m == 12 { (y + 1, 1) } else { (y, m + 1) };
+            NaiveDate::from_ymd_opt(ny, nm, d)
+                .or_else(|| NaiveDate::from_ymd_opt(ny, nm, 28))?
+        }
+        "weekly" => {
+            // Advance to next Sunday (week starts Sunday)
+            // num_days_from_sunday: Sun=0, Mon=1, …, Sat=6
+            let days_from_sun = date.weekday().num_days_from_sunday() as i64;
+            let until_next_sun = if days_from_sun == 0 { 7 } else { 7 - days_from_sun };
+            date + chrono::Duration::days(until_next_sun)
+        }
+        _ => return None,
+    };
+    Some(next.format("%Y-%m-%d").to_string())
+}
 
 fn validate_recurring_type(r: &str) -> Result<(), String> {
     if !["none", "monthly", "weekly"].contains(&r) {
@@ -107,11 +129,17 @@ pub fn create_expense(state: tauri::State<'_, AppState>, input: CreateExpenseInp
     let snapshot = if input.usd_to_syp_snapshot > 0.0 { input.usd_to_syp_snapshot } else { 14000.0 };
     let try_snapshot = if input.usd_to_try_snapshot > 0.0 { input.usd_to_try_snapshot } else { 34.0 };
     let currency = if input.currency.trim().is_empty() { "SYP".to_string() } else { input.currency.clone() };
+    let is_template: i64 = if input.recurring_type != "none" { 1 } else { 0 };
+    let next_due = if input.recurring_type != "none" {
+        compute_next_due(&input.date, &input.recurring_type)
+    } else {
+        None
+    };
 
     db.execute(
-        "INSERT INTO expenses (id,category,amount,description,date,recurring_type,employee_id,usd_to_syp_snapshot,currency,usd_to_try_snapshot,created_at,updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
-        params![id, input.category, input.amount, input.description, input.date, input.recurring_type, input.employee_id, snapshot, currency, try_snapshot, now],
+        "INSERT INTO expenses (id,category,amount,description,date,recurring_type,employee_id,usd_to_syp_snapshot,currency,usd_to_try_snapshot,is_template,next_due_date,created_at,updated_at)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?13)",
+        params![id, input.category, input.amount, input.description, input.date, input.recurring_type, input.employee_id, snapshot, currency, try_snapshot, is_template, next_due, now],
     ).map_err(|e| e.to_string())?;
 
     let desc = format!("مصروف جديد: {} — {} {}", input.category, input.amount, currency);
@@ -176,6 +204,70 @@ pub fn update_expense(
     });
 
     Ok(())
+}
+
+#[tauri::command]
+pub fn generate_recurring_expenses(state: tauri::State<'_, AppState>) -> Result<i64, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    let today = chrono::Local::now().date_naive().format("%Y-%m-%d").to_string();
+    let mut total_generated: i64 = 0;
+
+    // Loop: keep generating until all missed periods are caught up
+    loop {
+        #[allow(clippy::type_complexity)]
+        let due: Vec<(String, String, f64, Option<String>, String, String, Option<String>, f64, String, f64)> = {
+            let mut stmt = db.prepare(
+                "SELECT id, category, amount, description, next_due_date, recurring_type,
+                        employee_id, usd_to_syp_snapshot, currency, usd_to_try_snapshot
+                 FROM expenses
+                 WHERE is_template = 1 AND recurring_type != 'none'
+                   AND next_due_date IS NOT NULL AND next_due_date <= ?1"
+            ).map_err(|e| e.to_string())?;
+
+            let rows = stmt.query_map(params![today], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, f64>(2)?,
+                    row.get::<_, Option<String>>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, String>(5)?,
+                    row.get::<_, Option<String>>(6)?,
+                    row.get::<_, f64>(7)?,
+                    row.get::<_, String>(8)?,
+                    row.get::<_, f64>(9)?,
+                ))
+            }).map_err(|e| e.to_string())?;
+            let collected: Vec<_> = rows.filter_map(|r| r.ok()).collect();
+            collected
+        };
+
+        if due.is_empty() { break; }
+
+        let now = Utc::now().to_rfc3339();
+        for (parent_id, category, amount, description, due_date, recurring_type,
+             employee_id, syp_snapshot, currency, try_snapshot) in due
+        {
+            let new_id = Uuid::new_v4().to_string();
+            db.execute(
+                "INSERT INTO expenses (id,category,amount,description,date,recurring_type,employee_id,
+                          usd_to_syp_snapshot,currency,usd_to_try_snapshot,is_template,next_due_date,created_at,updated_at)
+                 VALUES (?1,?2,?3,?4,?5,'none',?6,?7,?8,?9,0,NULL,?10,?10)",
+                params![new_id, category, amount, description, due_date, employee_id,
+                        syp_snapshot, currency, try_snapshot, now],
+            ).map_err(|e| e.to_string())?;
+
+            let next = compute_next_due(&due_date, &recurring_type);
+            db.execute(
+                "UPDATE expenses SET next_due_date = ?1 WHERE id = ?2",
+                params![next, parent_id],
+            ).map_err(|e| e.to_string())?;
+
+            total_generated += 1;
+        }
+    }
+
+    Ok(total_generated)
 }
 
 #[tauri::command]

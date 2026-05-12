@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -25,10 +25,18 @@ const item = {
 
 export function CustomerList() {
   const { t } = useTranslation();
-  const { language, addToast } = useUIStore();
+  const { language, theme, addToast } = useUIStore();
   const { canDelete } = usePermissions();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const isDark = theme === 'dark';
+
+  const textMain   = isDark ? 'rgba(255,255,255,0.92)' : 'rgba(55,38,18,0.90)';
+  const textMuted  = isDark ? 'rgba(255,255,255,0.78)' : 'rgba(60,42,24,0.65)';
+  const cardBg     = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.72)';
+  const cardBorder = isDark ? '1px solid rgba(255,255,255,0.13)' : '1px solid rgba(60,42,24,0.12)';
+  const divider    = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(60,42,24,0.10)';
+  const gold       = isDark ? '#c9a84c' : '#8f6e28';
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,12 +86,17 @@ export function CustomerList() {
       >
         <button onClick={() => navigate(-1)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold"
-          style={{ fontFamily:'Cairo,sans-serif', background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.60)', border:'1px solid rgba(255,255,255,0.10)' }}>
+          style={{
+            fontFamily: 'Cairo,sans-serif',
+            background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(60,42,24,0.07)',
+            color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)',
+            border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(60,42,24,0.14)',
+          }}>
           <ArrowRight size={15} /> رجوع
         </button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-white/90">{t('customers.title')}</h1>
-          <p className="text-sm text-white/40 mt-0.5">{t('customers.totalCustomers')}: {customers.length}</p>
+          <h1 className="text-2xl font-bold" style={{ color: textMain }}>{t('customers.title')}</h1>
+          <p className="text-sm mt-0.5" style={{ color: textMuted }}>{t('customers.totalCustomers')}: {customers.length}</p>
         </div>
       </motion.div>
 
@@ -92,10 +105,10 @@ export function CustomerList() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 size={32} className="animate-spin text-gold-400" />
+          <Loader2 size={32} className="animate-spin" style={{ color: gold }} />
         </div>
       ) : customers.length === 0 ? (
-        <div className="flex flex-col items-center py-24 text-white/30">
+        <div className="flex flex-col items-center py-24" style={{ color: textMuted }}>
           <Users size={52} className="mb-3 opacity-30" />
           <p>{t('customers.noCustomers')}</p>
         </div>
@@ -119,35 +132,41 @@ export function CustomerList() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-gold-300 text-sm flex-shrink-0"
-                      style={{ background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.25)' }}>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                      style={{
+                        background: isDark ? 'rgba(201,168,76,0.15)' : 'rgba(143,110,40,0.12)',
+                        border: isDark ? '1px solid rgba(201,168,76,0.25)' : '1px solid rgba(143,110,40,0.28)',
+                        color: gold,
+                      }}>
                       {c.name.charAt(0)}
                     </div>
                     <div>
-                      <p className="font-semibold text-white/90">{c.name}</p>
-                      {c.phone && <p className="text-xs text-white/40 flex items-center gap-1 mt-0.5"><Phone size={10} />{toWesternDigits(c.phone)}</p>}
-                      {c.address && <p className="text-xs text-white/35 flex items-center gap-1"><MapPin size={10} />{c.address}</p>}
+                      <p className="font-semibold" style={{ color: gold }}>{c.name}</p>
+                      {c.phone && <p className="text-xs flex items-center gap-1 mt-0.5" style={{ color: textMuted }}><Phone size={10} />{toWesternDigits(c.phone)}</p>}
+                      {c.address && <p className="text-xs flex items-center gap-1" style={{ color: textMuted }}><MapPin size={10} />{c.address}</p>}
                     </div>
                   </div>
                 </div>
                 {c.notes && (
-                  <p className="text-xs text-white/40 px-3 py-2 rounded-xl border border-white/8"
-                    style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <p className="text-xs px-3 py-2 rounded-xl border border-white/8" style={{ color: textMuted, background: 'rgba(255,255,255,0.04)' }}>
                     {c.notes}
                   </p>
                 )}
                 <div className="flex items-center gap-1 pt-1 border-t border-white/8">
                   <button onClick={() => loadHistory(c)}
-                    className="flex-1 flex items-center justify-center gap-1 p-2 rounded-lg text-white/40 hover:text-white/75 hover:bg-white/8 transition-colors text-xs">
+                    className="flex-1 flex items-center justify-center gap-1 p-2 rounded-lg transition-colors text-xs"
+                    style={{ color: isDark ? 'rgba(255,255,255,0.55)' : textMuted }}>
                     <History size={12} /> السجل
                   </button>
                   <button onClick={() => { setEditing(c); setShowForm(true); }}
-                    className="flex-1 flex items-center justify-center gap-1 p-2 rounded-lg text-white/40 hover:text-white/75 hover:bg-white/8 transition-colors text-xs">
+                    className="flex-1 flex items-center justify-center gap-1 p-2 rounded-lg transition-colors text-xs"
+                    style={{ color: isDark ? 'rgba(255,255,255,0.55)' : textMuted }}>
                     <Pencil size={12} /> {t('actions.edit')}
                   </button>
                   {canDelete && (
                     <button onClick={() => setDeleting(c)}
-                      className="p-2 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                      className="p-2 rounded-lg transition-colors"
+                      style={{ color: 'rgba(180,28,28,0.55)' }}>
                       <Trash2 size={12} />
                     </button>
                   )}
@@ -170,21 +189,21 @@ export function CustomerList() {
       {history && (
         <Modal open onClose={() => setHistory(null)} title={`سجل ${history.customer.name}`} size="lg">
           {history.txs.length === 0 ? (
-            <p className="text-center text-white/35 py-8">{t('messages.noData')}</p>
+            <p className="text-center py-8" style={{ color: textMuted }}>{t('messages.noData')}</p>
           ) : (
             <div className="space-y-2">
               {history.txs.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl border border-white/8 text-sm"
-                  style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl text-sm"
+                  style={{ background: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(60,42,24,0.04)', border: isDark ? '1px solid rgba(255,255,255,0.26)' : cardBorder }}>
                   <div>
-                    <span className="font-medium text-white/80">
+                    <span className="font-medium" style={{ color: isDark ? '#fff' : textMain }}>
                       {tx.transaction_type === 'sale' ? 'بيع' : 'تأجير'} — {tx.dress_code}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-gold-400 font-bold">{formatCurrency(tx.price, '$', language)}</span>
+                    <span className="font-bold" style={{ color: gold }}>{formatCurrency(tx.price, '$', language)}</span>
                     <StatusBadge status={tx.status} />
-                    <span className="text-white/35 text-xs">{formatDate(tx.created_at, language)}</span>
+                    <span className="text-xs" style={{ color: isDark ? 'rgba(255,255,255,0.65)' : textMuted }}>{formatDate(tx.created_at, language)}</span>
                   </div>
                 </div>
               ))}
@@ -243,4 +262,3 @@ function CustomerForm({ customer, onClose, onSaved }: FormProps) {
     </Modal>
   );
 }
-

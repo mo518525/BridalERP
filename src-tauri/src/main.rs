@@ -225,6 +225,9 @@ fn main() {
             commands::inventory::update_dress_status,
             commands::inventory::delete_dress,
             commands::inventory::get_dress_history,
+            commands::inventory::get_dress_stats,
+            commands::inventory::get_all_dress_stats,
+            commands::inventory::get_dress_cleaning_events,
             // Transactions
             commands::transactions::get_transactions,
             commands::transactions::get_transaction,
@@ -247,6 +250,7 @@ fn main() {
             commands::expenses::create_expense,
             commands::expenses::update_expense,
             commands::expenses::delete_expense,
+            commands::expenses::generate_recurring_expenses,
             // Reminders
             commands::reminders::get_reminders,
             commands::reminders::create_reminder,

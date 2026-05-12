@@ -44,7 +44,7 @@ export const LIGHT: ThemeTokens = {
   text1: '#221a14',
   text2: 'rgba(34,26,20,0.96)',
   textMuted: '#493c31',
-  textFaint: 'rgba(73,60,49,0.56)',
+  textFaint: 'rgba(73,60,49,0.75)',
 
   card: 'rgba(255,255,255,0.34)',
   cardBorder: 'transparent',

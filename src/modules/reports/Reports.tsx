@@ -30,9 +30,11 @@ function buildCsv(rows: (string | number | null | undefined)[][]): string {
 // Labels
 const CAT_LABEL: Record<string, string>       = { rent:'إيجار', electricity:'كهرباء', salary:'رواتب', cleaning:'تنظيف', marketing:'تسويق', maintenance:'صيانة', other:'أخرى' };
 const STATUS_LABEL: Record<string, string>    = { available:'متاح', reserved:'محجوز', rented:'مؤجر', cleaning:'تنظيف', sold:'مباع' };
-const STATUS_COLOR: Record<string, string>    = { available:'#4ade80', reserved:'#fbbf24', rented:'#60a5fa', cleaning:'#c084fc', sold:'#f87171' };
+const STATUS_COLOR_DARK: Record<string, string>  = { available:'#4ade80', reserved:'#fbbf24', rented:'#60a5fa', cleaning:'#c084fc', sold:'#f87171' };
+const STATUS_COLOR_LIGHT: Record<string, string> = { available:'#15803d', reserved:'#b45309', rented:'#1d4ed8', cleaning:'#7c3aed', sold:'#dc2626' };
 const TX_STATUS_LABEL: Record<string, string> = { active:'نشط', completed:'مكتمل', cancelled:'ملغي' };
-const TX_STATUS_COLOR: Record<string, string> = { active:'#60a5fa', completed:'#4ade80', cancelled:'#f87171' };
+const TX_STATUS_COLOR_DARK: Record<string, string>  = { active:'#60a5fa', completed:'#4ade80', cancelled:'#f87171' };
+const TX_STATUS_COLOR_LIGHT: Record<string, string> = { active:'#1d4ed8', completed:'#15803d', cancelled:'#dc2626' };
 const PAYMENT_LABEL: Record<string, string>   = { cash:'نقد', card:'بطاقة', transfer:'تحويل', shamcash:'شام كاش' };
 const REC_LABEL: Record<string, string>       = { none:'مرة', monthly:'شهري', weekly:'أسبوعي' };
 
@@ -49,13 +51,14 @@ type ReportResult =
   | { type: 'customers';    data: Customer[] };
 
 interface ReportDef { id: ReportType; label: string; desc: string; icon: React.ElementType; color: string; needsDates: boolean; }
+interface ReportDefBase { id: ReportType; label: string; desc: string; icon: React.ElementType; darkColor: string; lightColor: string; needsDates: boolean; }
 
-const REPORT_DEFS: ReportDef[] = [
-  { id: 'financial',    label: 'التقرير المالي', desc: 'الإيرادات والمصروفات وصافي الربح', icon: BarChart3,   color: '#c9a84c', needsDates: true  },
-  { id: 'transactions', label: 'المعاملات',       desc: 'كل المبيعات والإيجارات',           icon: ShoppingBag, color: '#60a5fa', needsDates: true  },
-  { id: 'expenses',     label: 'المصروفات',       desc: 'جميع المصروفات مصنفةً',           icon: DollarSign,  color: '#f87171', needsDates: true  },
-  { id: 'inventory',    label: 'المخزون',          desc: 'حالة الفساتين الحالية',           icon: Package,     color: '#a78bfa', needsDates: false },
-  { id: 'customers',    label: 'العملاء',          desc: 'قائمة العملاء وبياناتهم',         icon: Users,       color: '#34d399', needsDates: false },
+const REPORT_DEFS_BASE: ReportDefBase[] = [
+  { id: 'financial',    label: 'التقرير المالي', desc: 'الإيرادات والمصروفات وصافي الربح', icon: BarChart3,   darkColor: '#c9a84c', lightColor: '#c9a84c', needsDates: true  },
+  { id: 'transactions', label: 'المعاملات',       desc: 'كل المبيعات والإيجارات',           icon: ShoppingBag, darkColor: '#60a5fa', lightColor: '#1d4ed8', needsDates: true  },
+  { id: 'expenses',     label: 'المصروفات',       desc: 'جميع المصروفات مصنفةً',           icon: DollarSign,  darkColor: '#f87171', lightColor: '#dc2626', needsDates: true  },
+  { id: 'inventory',    label: 'المخزون',          desc: 'حالة الفساتين الحالية',           icon: Package,     darkColor: '#a78bfa', lightColor: '#6d28d9', needsDates: false },
+  { id: 'customers',    label: 'العملاء',          desc: 'قائمة العملاء وبياناتهم',         icon: Users,       darkColor: '#34d399', lightColor: '#059669', needsDates: false },
 ];
 
 const DATE_PRESETS = [
@@ -132,7 +135,7 @@ function PTable({ headers, rows, isDark }: { headers: string[]; rows: (string | 
   const border = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(60,42,24,0.07)';
   const altRow = isDark ? 'rgba(255,255,255,0.025)' : 'rgba(60,42,24,0.025)';
   const textM  = isDark ? 'rgba(255,255,255,0.85)' : 'rgba(55,38,18,0.88)';
-  const textS  = isDark ? 'rgba(255,255,255,0.42)' : 'rgba(60,42,24,0.44)';
+  const textS  = isDark ? 'rgba(255,255,255,0.42)' : 'rgba(60,42,24,0.75)';
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${border}` }}>
       <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
@@ -164,7 +167,7 @@ function PTable({ headers, rows, isDark }: { headers: string[]; rows: (string | 
 // Section heading
 function SectionTitle({ n, title, count, isDark }: { n: number; title: string; count?: number; isDark: boolean }) {
   const textM = isDark ? 'rgba(255,255,255,0.85)' : 'rgba(55,38,18,0.88)';
-  const textS = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
+  const textS = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.75)';
   return (
     <div className="flex items-center gap-2 mb-3">
       <span className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0"
@@ -183,14 +186,17 @@ function SectionTitle({ n, title, count, isDark }: { n: number; title: string; c
 
 // Report previews
 function FinancialPreview({ data, isDark }: { data: FinancialReport; isDark: boolean }) {
+  const blue  = isDark ? '#60a5fa' : '#1d4ed8';
+  const green = isDark ? '#4ade80' : '#15803d';
+  const red   = isDark ? '#f87171' : '#dc2626';
   const kpis = [
     { label: 'إيرادات المبيعات', value: data.sale_revenue,   color: '#c9a84c', icon: ShoppingBag },
-    { label: 'إيرادات التأجير',  value: data.rental_revenue, color: '#60a5fa', icon: RefreshCw   },
-    { label: 'إجمالي الإيرادات', value: data.total_revenue,  color: '#4ade80', icon: TrendingUp   },
-    { label: 'إجمالي المصروفات', value: data.total_expenses, color: '#f87171', icon: TrendingDown  },
-    { label: 'صافي الربح',        value: data.net_profit,    color: data.net_profit >= 0 ? '#4ade80' : '#f87171', icon: BarChart3 },
+    { label: 'إيرادات التأجير',  value: data.rental_revenue, color: blue,      icon: RefreshCw   },
+    { label: 'إجمالي الإيرادات', value: data.total_revenue,  color: green,     icon: TrendingUp   },
+    { label: 'إجمالي المصروفات', value: data.total_expenses, color: red,       icon: TrendingDown  },
+    { label: 'صافي الربح',        value: data.net_profit,    color: data.net_profit >= 0 ? green : red, icon: BarChart3 },
   ];
-  const textS = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
+  const textS = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.75)';
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -207,16 +213,20 @@ function FinancialPreview({ data, isDark }: { data: FinancialReport; isDark: boo
         <SectionTitle n={1} title="المعاملات" count={data.transactions.length} isDark={isDark} />
         <PTable isDark={isDark}
           headers={['العميل','الفستان','النوع','السعر','العربون','المتبقي','العملة','الحالة','التاريخ']}
-          rows={data.transactions.map(tx => [
-            tx.customer_name, tx.dress_code,
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ color: tx.transaction_type==='sale'?'#c9a84c':'#60a5fa', background: tx.transaction_type==='sale'?'rgba(201,168,76,0.15)':'rgba(96,165,250,0.15)' }}>
-              {tx.transaction_type==='sale'?'بيع':'إيجار'}
-            </span>,
-            tx.price, tx.deposit, tx.remaining > 0 ? tx.remaining : '✓',
-            tx.currency,
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ color: TX_STATUS_COLOR[tx.status], background: `${TX_STATUS_COLOR[tx.status]}18` }}>{TX_STATUS_LABEL[tx.status]??tx.status}</span>,
-            tx.created_at.slice(0,10),
-          ])}
+          rows={data.transactions.map(tx => {
+            const txTypeColor = tx.transaction_type==='sale' ? '#c9a84c' : (isDark ? '#60a5fa' : '#1d4ed8');
+            const txStatusColor = (isDark ? TX_STATUS_COLOR_DARK : TX_STATUS_COLOR_LIGHT)[tx.status] ?? (isDark ? 'rgba(255,255,255,0.6)' : 'rgba(60,42,24,0.6)');
+            return [
+              tx.customer_name, tx.dress_code,
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ color: txTypeColor, background: tx.transaction_type==='sale'?'rgba(201,168,76,0.15)':'rgba(96,165,250,0.15)' }}>
+                {tx.transaction_type==='sale'?'بيع':'إيجار'}
+              </span>,
+              tx.price, tx.deposit, tx.remaining > 0 ? tx.remaining : '✓',
+              tx.currency,
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ color: txStatusColor, background: `${txStatusColor}18` }}>{TX_STATUS_LABEL[tx.status]??tx.status}</span>,
+              tx.created_at.slice(0,10),
+            ];
+          })}
         />
       </div>
       {data.expenses.length > 0 && (
@@ -240,16 +250,20 @@ function TransactionsPreview({ data, isDark }: { data: Transaction[]; isDark: bo
       <SectionTitle n={1} title="قائمة المعاملات" count={data.length} isDark={isDark} />
       <PTable isDark={isDark}
         headers={['العميل','الهاتف','الفستان','المقاس','النوع','السعر','العربون','المتبقي','العملة','طريقة الدفع','الحالة','بداية الإيجار','نهاية الإيجار','التاريخ']}
-        rows={data.map(tx => [
-          tx.customer_name, tx.customer_phone, tx.dress_code, tx.dress_size,
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ color: tx.transaction_type==='sale'?'#c9a84c':'#60a5fa', background: tx.transaction_type==='sale'?'rgba(201,168,76,0.15)':'rgba(96,165,250,0.15)' }}>
-            {tx.transaction_type==='sale'?'بيع':'إيجار'}
-          </span>,
-          tx.price, tx.deposit, tx.remaining > 0 ? tx.remaining : '✓',
-          tx.currency, PAYMENT_LABEL[tx.payment_method]??tx.payment_method,
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ color: TX_STATUS_COLOR[tx.status], background: `${TX_STATUS_COLOR[tx.status]}18` }}>{TX_STATUS_LABEL[tx.status]??tx.status}</span>,
-          tx.rental_start?.slice(0,10), tx.rental_end?.slice(0,10), tx.created_at.slice(0,10),
-        ])}
+        rows={data.map(tx => {
+          const txTypeColor = tx.transaction_type==='sale' ? '#c9a84c' : (isDark ? '#60a5fa' : '#1d4ed8');
+          const txStatusColor = (isDark ? TX_STATUS_COLOR_DARK : TX_STATUS_COLOR_LIGHT)[tx.status] ?? (isDark ? 'rgba(255,255,255,0.6)' : 'rgba(60,42,24,0.6)');
+          return [
+            tx.customer_name, tx.customer_phone, tx.dress_code, tx.dress_size,
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ color: txTypeColor, background: tx.transaction_type==='sale'?'rgba(201,168,76,0.15)':'rgba(96,165,250,0.15)' }}>
+              {tx.transaction_type==='sale'?'بيع':'إيجار'}
+            </span>,
+            tx.price, tx.deposit, tx.remaining > 0 ? tx.remaining : '✓',
+            tx.currency, PAYMENT_LABEL[tx.payment_method]??tx.payment_method,
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ color: txStatusColor, background: `${txStatusColor}18` }}>{TX_STATUS_LABEL[tx.status]??tx.status}</span>,
+            tx.rental_start?.slice(0,10), tx.rental_end?.slice(0,10), tx.created_at.slice(0,10),
+          ];
+        })}
       />
     </div>
   );
@@ -261,7 +275,7 @@ function ExpensesPreview({ data, isDark }: { data: Expense[]; isDark: boolean })
     if (e.currency === 'TRY') return s + e.amount / (e.usd_to_try_snapshot || 34);
     return s + e.amount / (e.usd_to_syp_snapshot || 14000);
   }, 0);
-  const textS = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
+  const textS = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.75)';
   const textM = isDark ? 'rgba(255,255,255,0.85)' : 'rgba(55,38,18,0.88)';
 
   const byCategory = Object.entries(
@@ -279,10 +293,10 @@ function ExpensesPreview({ data, isDark }: { data: Expense[]; isDark: boolean })
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: isDark ? 'rgba(248,113,113,0.08)' : 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.22)' }}>
-        <TrendingDown size={20} style={{ color: '#f87171' }} />
+        <TrendingDown size={20} style={{ color: isDark ? '#f87171' : '#dc2626' }} />
         <div>
           <span className="text-xs" style={{ color: textS, fontFamily: 'Cairo, sans-serif' }}>إجمالي المصروفات (USD)</span>
-          <div className="font-black text-xl" style={{ color: '#f87171', direction: 'ltr' }}>${totalUSD.toFixed(2)}</div>
+          <div className="font-black text-xl" style={{ color: isDark ? '#f87171' : '#dc2626', direction: 'ltr' }}>${totalUSD.toFixed(2)}</div>
         </div>
         <div className="ms-auto text-xs" style={{ color: textS, fontFamily: 'Cairo, sans-serif' }}>{data.length} مصروف</div>
       </div>
@@ -294,7 +308,7 @@ function ExpensesPreview({ data, isDark }: { data: Expense[]; isDark: boolean })
             <div key={cat} className="rounded-xl p-3 flex flex-col gap-1"
               style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.55)', border: '1px solid rgba(248,113,113,0.20)' }}>
               <span className="text-xs font-bold" style={{ color: textM, fontFamily: 'Cairo, sans-serif' }}>{cat}</span>
-              <span className="font-black text-sm" style={{ color: '#f87171', direction: 'ltr' }}>${usd.toFixed(2)}</span>
+              <span className="font-black text-sm" style={{ color: isDark ? '#f87171' : '#dc2626', direction: 'ltr' }}>${usd.toFixed(2)}</span>
               <span className="text-[10px]" style={{ color: textS, fontFamily: 'Cairo, sans-serif' }}>{count} إدخال</span>
             </div>
           ))}
@@ -313,14 +327,14 @@ function ExpensesPreview({ data, isDark }: { data: Expense[]; isDark: boolean })
 }
 
 function InventoryPreview({ data, isDark }: { data: { stats: InventoryStats; dresses: Dress[] }; isDark: boolean }) {
-  const textS = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
+  const textS = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.75)';
   const textM = isDark ? 'rgba(255,255,255,0.85)' : 'rgba(55,38,18,0.88)';
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {Object.entries(STATUS_LABEL).map(([key, label]) => {
           const count = data.stats.by_status[key] ?? 0;
-          const color = STATUS_COLOR[key] ?? '#fff';
+          const color = (isDark ? STATUS_COLOR_DARK : STATUS_COLOR_LIGHT)[key] ?? (isDark ? '#fff' : '#333');
           return (
             <div key={key} className="rounded-2xl p-4 flex flex-col gap-1"
               style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.60)', border: `1px solid ${color}33` }}>
@@ -348,7 +362,7 @@ function InventoryPreview({ data, isDark }: { data: { stats: InventoryStats; dre
           headers={['الكود','الحالة','اللون','المقاس','الأسلوب','السعر ($)','المنظف','تاريخ الإضافة']}
           rows={data.dresses.map(d => [
             d.code,
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ color: STATUS_COLOR[d.status], background: `${STATUS_COLOR[d.status]}18` }}>{STATUS_LABEL[d.status]??d.status}</span>,
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold" style={{ color: (isDark ? STATUS_COLOR_DARK : STATUS_COLOR_LIGHT)[d.status], background: `${(isDark ? STATUS_COLOR_DARK : STATUS_COLOR_LIGHT)[d.status]}18` }}>{STATUS_LABEL[d.status]??d.status}</span>,
             d.color, d.size, d.style, d.price, d.cleaner_name, d.created_at.slice(0,10),
           ])}
         />
@@ -358,12 +372,12 @@ function InventoryPreview({ data, isDark }: { data: { stats: InventoryStats; dre
 }
 
 function CustomersPreview({ data, isDark }: { data: Customer[]; isDark: boolean }) {
-  const textS = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
+  const textS = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.75)';
   return (
     <div>
       <div className="flex items-center gap-3 p-4 rounded-2xl mb-5" style={{ background: isDark ? 'rgba(52,211,153,0.08)' : 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.22)' }}>
-        <Users size={20} style={{ color: '#34d399' }} />
-        <span className="font-black text-xl" style={{ color: '#34d399' }}>{data.length}</span>
+        <Users size={20} style={{ color: isDark ? '#34d399' : '#059669' }} />
+        <span className="font-black text-xl" style={{ color: isDark ? '#34d399' : '#059669' }}>{data.length}</span>
         <span className="text-xs" style={{ color: textS, fontFamily: 'Cairo, sans-serif' }}>عميل مسجل</span>
       </div>
       <SectionTitle n={1} title="قائمة العملاء" count={data.length} isDark={isDark} />
@@ -499,10 +513,11 @@ export function Reports() {
   const [loading, setLoading]           = useState(false);
   const [result, setResult]             = useState<ReportResult | null>(null);
 
+  const REPORT_DEFS: ReportDef[] = REPORT_DEFS_BASE.map(d => ({ ...d, color: isDark ? d.darkColor : d.lightColor }));
   const activeDef = REPORT_DEFS.find(d => d.id === activeType)!;
   const gold   = '#c9a84c';
   const textM  = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)';
-  const textS  = isDark ? 'rgba(255,255,255,0.40)' : 'rgba(60,42,24,0.42)';
+  const textS  = isDark ? 'rgba(255,255,255,0.40)' : 'rgba(60,42,24,0.75)';
   const border = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(60,42,24,0.09)';
   const glass  = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.55)';
   const inputStyle: React.CSSProperties = { fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem', background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.60)', border: `1px solid ${border}`, borderRadius: 12, color: textM, outline: 'none', height: 36, paddingInline: '10px', colorScheme: isDark ? 'dark' : 'light' };
@@ -564,7 +579,7 @@ export function Reports() {
               onClick={() => exportToCsv(result, dateFrom, dateTo, addToast)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
               style={{ fontFamily:'Cairo,sans-serif', background: isDark?'rgba(255,255,255,0.07)':'rgba(255,255,255,0.60)', border:`1px solid ${border}`, color:textM }}>
-              <Download size={15} style={{ color: '#4ade80' }} /> تصدير CSV
+              <Download size={15} style={{ color: isDark ? '#4ade80' : '#15803d' }} /> تصدير CSV
             </motion.button>
             <motion.button initial={{ opacity:0,y:-6 }} animate={{ opacity:1,y:0 }} transition={{ delay:0.05 }}
               onClick={() => exportToPdf(result, dateFrom, dateTo, activeDef, addToast, shopName, shopLogo)}
@@ -658,7 +673,7 @@ export function Reports() {
         {result && !loading && (
           <motion.span initial={{ opacity:0 }} animate={{ opacity:1 }}
             className="flex items-center gap-1.5 text-xs"
-            style={{ color:'#4ade80', fontFamily:'Cairo,sans-serif' }}>
+            style={{ color: isDark ? '#4ade80' : '#15803d', fontFamily:'Cairo,sans-serif' }}>
             <Check size={13} /> تم إنشاء التقرير
           </motion.span>
         )}
@@ -696,7 +711,7 @@ export function Reports() {
                 <div className="ms-auto flex gap-2">
                   <button onClick={() => exportToCsv(result, dateFrom, dateTo, addToast)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                    style={{ fontFamily:'Cairo,sans-serif', color:'#4ade80', background:'rgba(74,222,128,0.10)', border:'1px solid rgba(74,222,128,0.25)' }}>
+                    style={{ fontFamily:'Cairo,sans-serif', color: isDark ? '#4ade80' : '#15803d', background:'rgba(74,222,128,0.10)', border:'1px solid rgba(74,222,128,0.25)' }}>
                     <Download size={12} /> CSV
                   </button>
                   <button onClick={() => exportToPdf(result, dateFrom, dateTo, activeDef, addToast, shopName, shopLogo)}

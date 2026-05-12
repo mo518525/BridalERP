@@ -104,6 +104,7 @@ pub struct Transaction {
     pub rental_end: Option<String>,
     pub return_date: Option<String>,
     pub employee_id: Option<String>,
+    pub pickup_date: Option<String>,
     pub notes: Option<String>,
     pub currency: String,
     pub exchange_rate_to_syp: f64,
@@ -313,6 +314,7 @@ pub struct CalendarEvent {
     pub customer_name: Option<String>,
     pub dress_code: Option<String>,
     pub priority: Option<String>,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

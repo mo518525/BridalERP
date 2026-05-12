@@ -222,6 +222,7 @@ pub fn get_customer_history(state: tauri::State<'_, AppState>, customer_id: Stri
     rental_end: row.get(13)?,
     return_date: row.get(14)?,
     employee_id: row.get(15)?,
+    pickup_date: None,
     notes: row.get(16)?,
     created_at: row.get(17)?,
     updated_at: row.get(18)?,

@@ -3,7 +3,7 @@ export type DressStatus = 'available' | 'reserved' | 'rented' | 'cleaning' | 'so
 export type TransactionType = 'sale' | 'rental';
 export type TransactionStatus = 'active' | 'completed' | 'cancelled';
 export type PaymentMethod = 'cash' | 'card' | 'transfer';
-export type ReminderType = 'pickup' | 'return' | 'payment' | 'cleaning';
+export type ReminderType = 'pickup' | 'return' | 'payment' | 'cleaning' | (string & {});
 export type ReminderPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type ReminderStatus = 'pending' | 'done' | 'cancelled';
 
@@ -60,6 +60,7 @@ export interface Transaction {
   rental_end?: string;
   return_date?: string;
   employee_id?: string;
+  pickup_date?: string;
   notes?: string;
   currency: string;
   exchange_rate_to_syp: number;
@@ -185,13 +186,14 @@ export interface HomeSummary {
 
 export interface CalendarEvent {
   id: string;
-  event_type: 'rental_start' | 'rental_end' | 'payment' | 'cleaning' | 'delivery';
+  event_type: string;
   title: string;
   date: string;
   entity_id: string;
   customer_name?: string;
   dress_code?: string;
   priority?: string;
+  description?: string;
 }
 
 export interface Announcement {

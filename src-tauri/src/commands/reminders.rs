@@ -73,7 +73,7 @@ pub fn create_reminder(state: tauri::State<'_, AppState>, input: CreateReminderI
         "reminder_type": input.reminder_type,
         "title": input.title,
         "date": input.date,
-        "priority": input.priority
+        "description": input.description
     }).to_string();
     crate::activity_helper::log_activity(&db, crate::activity_helper::ActivityEntry {
         user_id: input.user_id.as_deref(),

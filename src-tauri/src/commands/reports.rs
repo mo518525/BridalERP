@@ -207,6 +207,7 @@ pub fn get_financial_report(
                 payment_method: row.get(10)?, status: row.get(11)?,
                 rental_start: row.get(12)?, rental_end: row.get(13)?,
                 return_date: row.get(14)?, employee_id: row.get(15)?,
+                pickup_date: None,
                 notes: row.get(16)?, created_at: row.get(17)?, updated_at: row.get(18)?,
                 currency: row.get::<_, Option<String>>(20)?.unwrap_or_else(|| "SYP".to_string()),
                 exchange_rate_to_syp: row.get::<_, Option<f64>>(21)?.unwrap_or(1.0),

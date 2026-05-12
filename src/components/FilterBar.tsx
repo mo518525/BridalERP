@@ -2,6 +2,7 @@ import { Search, X, SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../utils/cn';
+import { useUIStore } from '../store/uiStore';
 import type { FilterParams } from '../types';
 import { GlassSelect } from './GlassSelect';
 import { GlassDatePicker } from './GlassDatePicker';
@@ -26,19 +27,22 @@ interface FilterBarProps {
   placeholder?: string;
 }
 
-const glassInput = [
-  'w-full h-10 rounded-xl border border-white/12 text-white/85 placeholder:text-white/30',
-  'text-sm focus:outline-none focus:border-gold-400/50 focus:ring-1 focus:ring-gold-400/30 transition-colors',
-  'backdrop-blur-xl',
-].join(' ');
-
-const glassInputStyle = {
-  background: 'rgba(255,255,255,0.07)',
-};
-
 export function FilterBar({ value, onChange, statusOptions, categoryOptions, showDateRange, placeholder }: FilterBarProps) {
   const { t } = useTranslation();
+  const { theme } = useUIStore();
+  const isDark = theme === 'dark';
   const [showFilters, setShowFilters] = useState(false);
+
+  const glassInput = cn(
+    'w-full h-10 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-gold-400/30 transition-colors backdrop-blur-xl',
+    isDark
+      ? 'border border-white/12 text-white/85 placeholder:text-white/30 focus:border-gold-400/50'
+      : 'border border-[rgba(60,42,24,0.18)] text-[rgba(55,38,18,0.88)] placeholder:text-[rgba(60,42,24,0.40)] focus:border-[rgba(143,110,40,0.50)]'
+  );
+
+  const glassInputStyle = {
+    background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.65)',
+  };
 
   const update = (patch: Partial<FilterParams>) => onChange({ ...value, ...patch });
   const hasActiveFilters = !!(value.status || value.category || value.date_from || value.date_to);
@@ -52,7 +56,7 @@ export function FilterBar({ value, onChange, statusOptions, categoryOptions, sho
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search size={16} className="absolute start-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+          <Search size={16} className="absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(60,42,24,0.45)' }} />
           <input
             value={value.search || ''}
             onChange={(e) => update({ search: e.target.value })}
@@ -61,7 +65,7 @@ export function FilterBar({ value, onChange, statusOptions, categoryOptions, sho
             style={glassInputStyle}
           />
           {value.search && (
-            <button onClick={() => update({ search: '' })} className="absolute end-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70">
+            <button onClick={() => update({ search: '' })} className="absolute end-3 top-1/2 -translate-y-1/2" style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(60,42,24,0.45)' }}>
               <X size={14} />
             </button>
           )}

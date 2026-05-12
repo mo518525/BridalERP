@@ -30,24 +30,24 @@ const RECURRING_OPTIONS: { value: RecurringType; label: string }[] = [
   { value: 'weekly', label: 'أسبوعي' },
 ];
 
-const RECURRING_META: Record<RecurringType, { label: string; color: string; bg: string }> = {
-  none: { label: 'مرة واحدة', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  monthly: { label: 'شهري', color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
-  weekly: { label: 'أسبوعي', color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
+const RECURRING_META_BASE: Record<RecurringType, { label: string; darkColor: string; lightColor: string; bg: string }> = {
+  none: { label: 'مرة واحدة', darkColor: '#f59e0b', lightColor: '#b45309', bg: 'rgba(245,158,11,0.12)' },
+  monthly: { label: 'شهري', darkColor: '#60a5fa', lightColor: '#1d4ed8', bg: 'rgba(96,165,250,0.12)' },
+  weekly: { label: 'أسبوعي', darkColor: '#34d399', lightColor: '#059669', bg: 'rgba(52,211,153,0.12)' },
 };
 
 // Table layout
 const EXPENSES_COLS = '1fr 1fr 1fr 1fr 2fr auto';
-const EXPENSES_HDR: React.CSSProperties = {
+const expensesHdr = (isDark: boolean): React.CSSProperties => ({
   gridTemplateColumns: EXPENSES_COLS,
   fontFamily: 'Cairo, sans-serif',
-  background: 'rgba(255,255,255,0.055)',
+  background: isDark ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.50)',
   backdropFilter: 'blur(16px) saturate(160%)',
   WebkitBackdropFilter: 'blur(16px) saturate(160%)',
-  borderBottom: '1px solid rgba(212,175,55,0.22)',
-  color: 'rgba(212,175,55,0.55)',
+  borderBottom: isDark ? '1px solid rgba(212,175,55,0.22)' : '1px solid rgba(143,110,40,0.20)',
+  color: isDark ? 'rgba(212,175,55,0.70)' : 'rgba(143,110,40,0.85)',
   whiteSpace: 'nowrap' as const,
-};
+});
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
 const item = {
@@ -58,7 +58,7 @@ const item = {
 export function ExpenseList() {
   const { t } = useTranslation();
   const { language, addToast, theme } = useUIStore();
-  const { canDelete, canViewFinance } = usePermissions();
+  const { canDelete, canViewFinance, isEmployee } = usePermissions();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isDark = theme === 'dark';
@@ -90,6 +90,11 @@ export function ExpenseList() {
       setLoading(false);
     }
   }, [addToast, filter]);
+
+  // On first load: auto-generate any due recurring expenses, then fetch the list
+  useEffect(() => {
+    api.expenses.generateRecurring().catch(() => {});
+  }, []);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(load, filter.search?.trim() ? 250 : 0);
@@ -127,8 +132,9 @@ export function ExpenseList() {
     setFilter({});
   };
 
-  const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
+  const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.75)';
   const textMain = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)';
+  const RECURRING_META = Object.fromEntries(Object.entries(RECURRING_META_BASE).map(([k, v]) => [k, { ...v, color: isDark ? v.darkColor : v.lightColor }])) as Record<RecurringType, { label: string; darkColor: string; lightColor: string; bg: string; color: string }>;
 
   const inputStyle: React.CSSProperties = {
     fontFamily: 'Cairo, sans-serif',
@@ -163,166 +169,164 @@ export function ExpenseList() {
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold"
-          style={{ fontFamily: 'Cairo,sans-serif', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.60)', border: '1px solid rgba(255,255,255,0.10)' }}
+          style={{ fontFamily: 'Cairo,sans-serif', background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(60,42,24,0.07)', color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)', border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(60,42,24,0.14)' }}
         >
           <ArrowRight size={15} /> رجوع
         </button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-white/90">{t('expenses.title')}</h1>
-          <p className="text-sm text-white/40 mt-0.5">
-            إجمالي: <span className="text-red-400 font-semibold">{formatCurrency(total, '$', language)}</span>
-          </p>
+          <h1 className="text-2xl font-bold" style={{ color: textMain }}>{t('expenses.title')}</h1>
+          {!isEmployee && (
+            <p className="text-sm mt-0.5" style={{ color: textMuted }}>
+              إجمالي: <span className="font-semibold" style={{ color: isDark ? '#f87171' : '#b91c1c' }}>{formatCurrency(total, '$', language)}</span>
+            </p>
+          )}
         </div>
         <Button variant="gold" icon={<Plus size={16} />} onClick={() => { setEditing(null); setShowForm(true); }}>
           {t('expenses.addExpense')}
         </Button>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }} className="flex flex-wrap gap-2">
-        {RECURRING_OPTIONS.map((option) => {
-          const meta = RECURRING_META[option.value];
-          const active = filter.recurring_type === option.value;
-          return (
-            <button
-              key={option.value}
-              onClick={() => updateFilter({ recurring_type: active ? undefined : option.value })}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all"
-              style={{
-                fontFamily: 'Cairo, sans-serif',
-                background: active ? meta.bg : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(60,42,24,0.04)',
-                border: `1px solid ${active ? `${meta.color}44` : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(60,42,24,0.08)'}`,
-                color: active ? meta.color : textMuted,
-                fontWeight: active ? 700 : 500,
-              }}
-            >
-              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: meta.color }} />
-              {meta.label}
-              <span className="opacity-60 text-[10px]">({recurringCounts[option.value] ?? 0})</span>
-            </button>
-          );
-        })}
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08 }}
-        className="flex flex-wrap gap-2 items-center"
-      >
-        <div className="relative flex-1 min-w-[220px]">
-          <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: textMuted }} />
-          <input
-            value={filter.search || ''}
-            onChange={(event) => updateFilter({ search: event.target.value || undefined })}
-            placeholder="ابحث بالفئة، الوصف، التاريخ، المبلغ أو نوع التكرار..."
-            style={{ ...inputStyle, paddingInlineStart: 34, width: '100%' }}
-          />
-        </div>
-
-        <GlassSelect
-          value={filter.category || ''}
-          onChange={(value) => updateFilter({ category: value || undefined })}
-          options={CATEGORY_OPTIONS}
-          placeholder="كل الفئات"
-          containerClass="w-[150px] min-w-[150px]"
-        />
-
-        <GlassDatePicker value={filter.date_from || ''} onChange={(v) => updateFilter({ date_from: v || undefined })} placeholder="من تاريخ" containerClass="w-[160px]" />
-        <span style={{ color: textMuted, fontSize: '0.78rem', fontFamily: 'Cairo' }}>—</span>
-        <GlassDatePicker value={filter.date_to || ''} onChange={(v) => updateFilter({ date_to: v || undefined })} placeholder="إلى تاريخ" containerClass="w-[160px]" />
-
-        {(filter.search || filter.category || filter.date_from || filter.date_to || filter.recurring_type) && (
-          <button
-            onClick={resetFilters}
-            className="px-3 py-1.5 rounded-xl text-xs"
-            style={{ fontFamily: 'Cairo, sans-serif', color: '#f87171', background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.20)' }}
-          >
-            مسح
-          </button>
-        )}
-      </motion.div>
-
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 size={32} className="animate-spin text-gold-400" />
-        </div>
-      ) : expenses.length === 0 ? (
-        <div className="flex flex-col items-center py-24 text-white/30">
-          <DollarSign size={52} className="mb-3 opacity-30" />
-          <p>{t('expenses.noExpenses')}</p>
-        </div>
-      ) : (
-        <div className="rounded-2xl overflow-hidden border border-white/[0.10]"
-          style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.35)' }}>
-          {/* Sticky header */}
-          <div
-            className="sticky top-0 z-10 grid gap-x-4 px-4 py-2.5 text-xs font-semibold"
-            style={EXPENSES_HDR}
-          >
-            <span>الفئة</span>
-            <span>المبلغ</span>
-            <span>التاريخ</span>
-            <span>التكرار</span>
-            <span>الوصف</span>
-            <span></span>
-          </div>
-          {/* Rows */}
-          <motion.div variants={container} initial="hidden" animate="show">
-          {expenses.map((expense) => {
-            const recurringMeta = RECURRING_META[(expense.recurring_type || 'none') as RecurringType] ?? RECURRING_META.none;
-            return (
-              <motion.div key={expense.id} variants={item}
-                className="grid gap-x-4 px-4 py-3 border-b last:border-b-0 transition-colors"
-                style={{
-                  gridTemplateColumns: EXPENSES_COLS,
-                  alignItems: 'center',
-                  borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(60,42,24,0.06)',
-                  borderRight: `3px solid ${recurringMeta.color}55`,
-                }}
-              >
-                {/* Category */}
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: recurringMeta.bg }}>
-                    {expense.recurring_type !== 'none'
-                      ? <RefreshCw size={13} style={{ color: recurringMeta.color }} />
-                      : <DollarSign size={13} style={{ color: recurringMeta.color }} />}
-                  </div>
-                  <span className="text-sm font-semibold" style={{ color: textMain, fontFamily: 'Cairo, sans-serif' }}>
-                    {CATEGORY_OPTIONS.find((c) => c.value === expense.category)?.label || expense.category}
-                  </span>
-                </div>
-                {/* Amount */}
-                <span className="text-sm font-bold text-red-400">{formatCurrency(expense.amount, expense.currency === 'USD' ? '$' : expense.currency === 'TRY' ? '₺' : 'SYP', language)}</span>
-                {/* Date */}
-                <span className="text-xs" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>{formatDate(expense.date, language)}</span>
-                {/* Recurring */}
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold w-fit"
-                  style={{ color: recurringMeta.color, background: recurringMeta.bg }}>
-                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: recurringMeta.color }} />
-                  {recurringMeta.label}
-                </span>
-                {/* Description */}
-                <span className="text-xs truncate" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>{expense.description || '—'}</span>
-                {/* Actions */}
-                <div className="flex items-center gap-1">
-                  <button onClick={() => { setEditing(expense); setShowForm(true); }}
-                    className="p-1.5 rounded-lg text-white/35 hover:text-white/70 hover:bg-white/8 transition-colors">
-                    <Pencil size={13} />
-                  </button>
-                  {canDelete && (
-                    <button onClick={() => setDeleting(expense)}
-                      className="p-1.5 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors">
-                      <Trash2 size={13} />
-                    </button>
-                  )}
-                </div>
-              </motion.div>
-            );
-          })}
+      <>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }} className="flex flex-wrap gap-2">
+            {RECURRING_OPTIONS.map((option) => {
+              const meta = RECURRING_META[option.value];
+              const active = filter.recurring_type === option.value;
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => updateFilter({ recurring_type: active ? undefined : option.value })}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all"
+                  style={{
+                    fontFamily: 'Cairo, sans-serif',
+                    background: active ? meta.bg : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(60,42,24,0.04)',
+                    border: `1px solid ${active ? `${meta.color}44` : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(60,42,24,0.08)'}`,
+                    color: active ? meta.color : textMuted,
+                    fontWeight: active ? 700 : 500,
+                  }}
+                >
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: meta.color }} />
+                  {meta.label}
+                  <span className="opacity-60 text-[10px]">({recurringCounts[option.value] ?? 0})</span>
+                </button>
+              );
+            })}
           </motion.div>
-        </div>
-      )}
+
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08 }}
+            className="flex flex-wrap gap-2 items-center"
+          >
+            <div className="relative flex-1 min-w-[220px]">
+              <Search size={14} className="absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: textMuted }} />
+              <input
+                value={filter.search || ''}
+                onChange={(event) => updateFilter({ search: event.target.value || undefined })}
+                placeholder="ابحث بالفئة، الوصف، التاريخ، المبلغ أو نوع التكرار..."
+                style={{ ...inputStyle, paddingInlineStart: 34, width: '100%' }}
+              />
+            </div>
+
+            <GlassSelect
+              value={filter.category || ''}
+              onChange={(value) => updateFilter({ category: value || undefined })}
+              options={CATEGORY_OPTIONS}
+              placeholder="كل الفئات"
+              containerClass="w-[150px] min-w-[150px]"
+            />
+
+            <GlassDatePicker value={filter.date_from || ''} onChange={(v) => updateFilter({ date_from: v || undefined })} placeholder="من تاريخ" containerClass="w-[160px]" />
+            <span style={{ color: textMuted, fontSize: '0.78rem', fontFamily: 'Cairo' }}>—</span>
+            <GlassDatePicker value={filter.date_to || ''} onChange={(v) => updateFilter({ date_to: v || undefined })} placeholder="إلى تاريخ" containerClass="w-[160px]" />
+
+            {(filter.search || filter.category || filter.date_from || filter.date_to || filter.recurring_type) && (
+              <button
+                onClick={resetFilters}
+                className="px-3 py-1.5 rounded-xl text-xs"
+                style={{ fontFamily: 'Cairo, sans-serif', color: isDark ? '#f87171' : '#dc2626', background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.20)' }}
+              >
+                مسح
+              </button>
+            )}
+          </motion.div>
+
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 size={32} className="animate-spin text-gold-400" />
+            </div>
+          ) : expenses.length === 0 ? (
+            <div className="flex flex-col items-center py-24" style={{ color: textMuted }}>
+              <DollarSign size={52} className="mb-3 opacity-30" />
+              <p>{t('expenses.noExpenses')}</p>
+            </div>
+          ) : (
+            <div className="rounded-2xl overflow-hidden border border-white/[0.10]"
+              style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.35)', backdropFilter: 'blur(16px) saturate(148%)', WebkitBackdropFilter: 'blur(16px) saturate(148%)' }}>
+              <div
+                className="sticky top-0 z-10 grid gap-x-4 px-4 py-2.5 text-xs font-semibold"
+                style={expensesHdr(isDark)}
+              >
+                <span>الفئة</span>
+                <span>المبلغ</span>
+                <span>التاريخ</span>
+                <span>التكرار</span>
+                <span>الوصف</span>
+                <span></span>
+              </div>
+              <motion.div variants={container} initial="hidden" animate="show">
+                {expenses.map((expense) => {
+                  const recurringMeta = RECURRING_META[(expense.recurring_type || 'none') as RecurringType] ?? RECURRING_META.none;
+                  return (
+                    <motion.div key={expense.id} variants={item}
+                      className="grid gap-x-4 px-4 py-3 border-b last:border-b-0 transition-colors"
+                      style={{
+                        gridTemplateColumns: EXPENSES_COLS,
+                        alignItems: 'center',
+                        borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(60,42,24,0.06)',
+                        borderRight: `3px solid ${recurringMeta.color}55`,
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ background: recurringMeta.bg }}>
+                          {expense.recurring_type !== 'none'
+                            ? <RefreshCw size={13} style={{ color: recurringMeta.color }} />
+                            : <DollarSign size={13} style={{ color: recurringMeta.color }} />}
+                        </div>
+                        <span className="text-sm font-semibold" style={{ color: textMain, fontFamily: 'Cairo, sans-serif' }}>
+                          {CATEGORY_OPTIONS.find((c) => c.value === expense.category)?.label || expense.category}
+                        </span>
+                      </div>
+                      <span className="text-sm font-bold" style={{ color: isDark ? '#f87171' : '#b91c1c' }}>{formatCurrency(expense.amount, expense.currency === 'USD' ? '$' : expense.currency === 'TRY' ? '₺' : 'SYP', language)}</span>
+                      <span className="text-xs" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>{formatDate(expense.date, language)}</span>
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold w-fit"
+                        style={{ color: recurringMeta.color, background: recurringMeta.bg }}>
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: recurringMeta.color }} />
+                        {recurringMeta.label}
+                      </span>
+                      <span className="text-xs truncate" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>{expense.description || '—'}</span>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => { setEditing(expense); setShowForm(true); }}
+                          className="p-1.5 rounded-lg transition-colors"
+                          style={{ color: isDark ? 'rgba(255,255,255,0.50)' : 'rgba(60,42,24,0.65)' }}>
+                          <Pencil size={13} />
+                        </button>
+                        {canDelete && (
+                          <button onClick={() => setDeleting(expense)}
+                            className="p-1.5 rounded-lg transition-colors"
+                            style={{ color: isDark ? 'rgba(248,113,113,0.60)' : 'rgba(180,28,28,0.70)' }}>
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            </div>
+          )}
+      </>
 
       {showForm && (
         <ExpenseForm
@@ -348,18 +352,35 @@ export function ExpenseList() {
 
 interface FormProps { expense: Expense | null; onClose: () => void; onSaved: () => void; }
 
+const CUSTOM_CATEGORIES_KEY = 'expense_custom_categories';
+const PREDEFINED_VALUES = new Set(CATEGORY_OPTIONS.map((o) => o.value));
+
+function loadCustomCategories(): string[] {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_CATEGORIES_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveCustomCategories(cats: string[]) {
+  localStorage.setItem(CUSTOM_CATEGORIES_KEY, JSON.stringify(cats));
+}
+
 function ExpenseForm({ expense, onClose, onSaved }: FormProps) {
   const { t } = useTranslation();
   const { addToast, exchangeRates, theme } = useUIStore();
   const isDark = theme === 'dark';
+
+  // Determine if the existing expense has a custom category
+  const isEditingCustom = expense && !PREDEFINED_VALUES.has(expense.category);
+
   const [form, setForm] = useState({
-    category: expense?.category ?? 'rent',
+    category: isEditingCustom ? 'other' : (expense?.category ?? 'rent'),
     amount: expense?.amount?.toString() ?? '',
     currency: expense?.currency ?? 'USD',
     description: expense?.description ?? '',
     date: expense?.date ?? todayISO(),
     recurring_type: (expense?.recurring_type ?? 'none') as RecurringType,
   });
+  const [customCategory, setCustomCategory] = useState(isEditingCustom ? (expense?.category ?? '') : '');
+  const [customCategories, setCustomCategories] = useState<string[]>(loadCustomCategories);
   const EXPENSE_CURRENCIES = [
     { code: 'USD', label: '$',   size: '15px', font: 'system-ui, sans-serif' },
     { code: 'SYP', label: 'ل.س', size: '11px', font: 'Cairo, sans-serif'     },
@@ -376,13 +397,25 @@ function ExpenseForm({ expense, onClose, onSaved }: FormProps) {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!form.amount || isNaN(+form.amount) || +form.amount <= 0) return;
+    const finalCategory = form.category === 'other'
+      ? customCategory.trim()
+      : form.category;
+    if (!finalCategory) return;
+
+    // Persist new custom category
+    if (form.category === 'other' && finalCategory && !customCategories.includes(finalCategory) && !PREDEFINED_VALUES.has(finalCategory)) {
+      const updated = [...customCategories, finalCategory];
+      setCustomCategories(updated);
+      saveCustomCategories(updated);
+    }
+
     setLoading(true);
     try {
       if (expense) {
-        await api.expenses.update(expense.id, form.category, +form.amount, form.description || undefined, form.date, form.recurring_type);
+        await api.expenses.update(expense.id, finalCategory, +form.amount, form.description || undefined, form.date, form.recurring_type);
       } else {
         await api.expenses.create({
-          category: form.category,
+          category: finalCategory,
           amount: +form.amount,
           currency: form.currency,
           description: form.description || undefined,
@@ -402,7 +435,7 @@ function ExpenseForm({ expense, onClose, onSaved }: FormProps) {
   };
 
   const textColor = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)';
-  const labelColor = isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)';
+  const labelColor = isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)';
 
   return (
     <Modal
@@ -419,12 +452,40 @@ function ExpenseForm({ expense, onClose, onSaved }: FormProps) {
       }
     >
       <form id="exp-form" onSubmit={handleSubmit} className="space-y-4">
-        <Select label={t('expenses.category')} value={form.category} onChange={(event) => set('category', event.target.value)} options={CATEGORY_OPTIONS} required />
+        {/* Category select + custom input */}
+        <div className="flex flex-col gap-1.5">
+          <Select
+            label={t('expenses.category')}
+            value={form.category}
+            onChange={(event) => set('category', event.target.value)}
+            options={[
+              ...CATEGORY_OPTIONS.filter((o) => o.value !== 'other'),
+              ...customCategories.map((c) => ({ value: c, label: c })),
+              { value: 'other', label: 'أخرى (مخصص)…' },
+            ]}
+            required
+          />
+          {form.category === 'other' && (
+            <input
+              autoFocus
+              placeholder="اكتب نوع المصروف…"
+              value={customCategory}
+              onChange={(e) => { setCustomCategory(e.target.value); setIsDirty(true); }}
+              className="h-10 px-3 text-sm rounded-xl outline-none"
+              style={{
+                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.60)',
+                border: isDark ? '1px solid rgba(201,168,76,0.35)' : '1px solid rgba(201,168,76,0.40)',
+                color: isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)',
+                fontFamily: 'Cairo, sans-serif',
+              }}
+            />
+          )}
+        </div>
 
         {/* Amount + currency picker */}
         <div className="flex flex-col gap-1.5">
           <label style={{ fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif', color: labelColor }}>
-            {t('expenses.amount')} <span style={{ color: '#f87171' }}>*</span>
+            {t('expenses.amount')} <span style={{ color: isDark ? '#f87171' : '#dc2626' }}>*</span>
           </label>
           <div className="flex gap-2">
             <input
@@ -450,7 +511,7 @@ function ExpenseForm({ expense, onClose, onSaved }: FormProps) {
                     fontFamily: font,
                     fontSize: size,
                     background: form.currency === code ? 'rgba(201,168,76,0.22)' : isDark ? 'rgba(255,255,255,0.06)' : 'rgba(60,42,24,0.06)',
-                    color: form.currency === code ? '#c9a84c' : isDark ? 'rgba(255,255,255,0.45)' : 'rgba(60,42,24,0.45)',
+                    color: form.currency === code ? '#c9a84c' : isDark ? 'rgba(255,255,255,0.45)' : 'rgba(60,42,24,0.75)',
                     border: form.currency === code ? '1px solid rgba(201,168,76,0.40)' : isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(60,42,24,0.08)',
                   }}>
                   {label}

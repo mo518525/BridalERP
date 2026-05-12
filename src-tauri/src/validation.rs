@@ -51,9 +51,10 @@ pub fn validate_expense_category(category: &str) -> Result<(), String> {
 }
 
 pub fn validate_reminder_type(rt: &str) -> Result<(), String> {
-    match rt {
-        "pickup" | "return" | "payment" | "cleaning" => Ok(()),
-        _ => Err(format!("نوع تذكير غير صالح: {}", rt)),
+    if rt.trim().is_empty() {
+        Err("نوع التذكير لا يمكن أن يكون فارغاً".to_string())
+    } else {
+        Ok(())
     }
 }
 

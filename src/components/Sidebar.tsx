@@ -4,9 +4,10 @@ import { api } from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Home, BarChart3, CalendarDays,
-  Users2, Settings, LogOut, Menu, ChevronRight,
+  Users2, Settings, LogOut, Menu,
 } from 'lucide-react';
 import { ProfileModal } from './ProfileModal';
+import { ConfirmDialog } from './Modal';
 import { cn } from '../utils/cn';
 import { useUIStore } from '../store/uiStore';
 import { useAuthStore } from '../store/authStore';
@@ -75,7 +76,7 @@ function NavItem({ to, icon, label, exact, open, isDark }: NavItemProps) {
             <motion.span
               variants={labelV} initial="hidden" animate="show" exit="hidden"
               className="truncate whitespace-nowrap text-[13.5px]"
-              style={{ color: active ? t.text1 : t.text2, fontWeight: isDark ? 600 : 800 }}>
+              style={{ color: active ? t.text1 : t.text2, fontWeight: isDark ? 500 : 500 }}>
               {label}
             </motion.span>
           )}
@@ -93,8 +94,11 @@ export function Sidebar() {
   const isDark = theme === 'dark';
   const t = tok(isDark);
   const [showProfile, setShowProfile] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showYouhe, setShowYouhe] = useState(false);
 
   const initials = user?.name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() ?? '؟';
+  const ROLE_AR: Record<string, string> = { owner: 'مالك', employee: 'موظف', cashier: 'كاشير' };
   const avatarColor = (user?.id ? avatarColors[user.id] : null) ?? '#c9a84c';
   const [avatarPhoto, setAvatarPhoto] = useState<string | null>(null);
 
@@ -177,6 +181,24 @@ export function Sidebar() {
               <NavItem to="/employees" icon={<Users2 size={16} />} label="الموظفين" open={sidebarOpen} isDark={isDark} />
             )}
             <NavItem to="/settings" icon={<Settings size={16} />} label="الإعدادات" open={sidebarOpen} isDark={isDark} />
+
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={() => setShowYouhe(true)}
+              className={cn('w-full flex items-center gap-3 rounded-2xl px-3 py-2.5 mt-1', !sidebarOpen && 'justify-center px-0')}
+              style={{ background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.25)' }}
+            >
+              <span style={{ fontSize: 16 }}>✨</span>
+              <AnimatePresence>
+                {sidebarOpen && (
+                  <motion.span variants={labelV} initial="hidden" animate="show" exit="hidden"
+                    className="truncate whitespace-nowrap text-[13px]"
+                    style={{ color: isDark ? '#c9a84c' : '#8f6e28', fontFamily: 'Cairo, sans-serif', fontWeight: 500 }}>
+                    يوه
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
           </nav>
 
           {/* Profile + Logout */}
@@ -188,7 +210,7 @@ export function Sidebar() {
               whileHover={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.42)' }}
               onClick={() => setShowProfile(true)}
               className={cn('w-full flex items-center gap-3 rounded-2xl px-3 py-2.5', !sidebarOpen && 'justify-center px-0')}
-              style={{ border: '1px solid transparent' }}
+              style={{ border: isDark ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(60,42,24,0.13)', background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.30)' }}
               title={!sidebarOpen ? user?.name : undefined}
             >
               <div
@@ -206,7 +228,7 @@ export function Sidebar() {
               <AnimatePresence>
                 {sidebarOpen && (
                   <motion.div variants={labelV} initial="hidden" animate="show" exit="hidden" className="flex-1 min-w-0 overflow-hidden text-start">
-                    <p className="truncate text-[13px]" style={{ color: t.text1, fontWeight: isDark ? 600 : 800, fontFamily: 'Cairo, sans-serif' }}>
+                    <p className="truncate text-[13px]" style={{ color: t.text1, fontWeight: isDark ? 500 : 500, fontFamily: 'Cairo, sans-serif' }}>
                       {shopName || user?.name}
                     </p>
                     <p className="text-[10px] truncate mt-0.5" style={{ color: t.textMuted, fontFamily: 'Cairo, sans-serif' }}>
@@ -215,7 +237,6 @@ export function Sidebar() {
                   </motion.div>
                 )}
               </AnimatePresence>
-              {sidebarOpen && <ChevronRight size={13} style={{ color: t.textMuted, flexShrink: 0 }} />}
             </motion.button>
 
             {/* Divider */}
@@ -225,7 +246,7 @@ export function Sidebar() {
             <motion.button
               whileTap={{ scale: 0.97 }}
               whileHover={{ backgroundColor: isDark ? 'rgba(239,68,68,0.10)' : 'rgba(239,68,68,0.07)' }}
-              onClick={logout}
+              onClick={() => setShowLogoutConfirm(true)}
               className={cn('w-full flex items-center gap-3 rounded-2xl px-3 py-2.5', !sidebarOpen && 'justify-center px-0')}
               style={{ border: '1px solid transparent' }}
               title={!sidebarOpen ? 'تسجيل الخروج' : undefined}
@@ -235,7 +256,7 @@ export function Sidebar() {
                 {sidebarOpen && (
                   <motion.span variants={labelV} initial="hidden" animate="show" exit="hidden"
                     className="truncate whitespace-nowrap text-[13.5px]"
-                    style={{ color: '#e05252', fontWeight: isDark ? 600 : 800 }}>
+                    style={{ color: '#e05252', fontWeight: isDark ? 500 : 500 }}>
                     تسجيل الخروج
                   </motion.span>
                 )}
@@ -249,6 +270,118 @@ export function Sidebar() {
       {/* Profile modal */}
       <AnimatePresence>
         {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
+      </AnimatePresence>
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={logout}
+        title="تسجيل الخروج"
+        message="هل أنت متأكد من تسجيل الخروج؟"
+        confirmLabel="خروج"
+        danger
+      />
+
+      <AnimatePresence>
+        {showYouhe && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowYouhe(false)}
+            className="fixed inset-0 z-[999] flex items-center justify-center cursor-pointer overflow-hidden"
+            style={{
+              background: 'linear-gradient(160deg, #e8c8d8 0%, #c8e0cc 28%, #e8d8c0 55%, #c8dce8 78%, #e0c8d8 100%)',
+            }}
+          >
+            {/* Spring background blobs — darker */}
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', width: 700, height: 700, borderRadius: '50%', top: '-15%', left: '-10%', background: 'radial-gradient(circle, rgba(220,120,150,0.55) 0%, transparent 65%)', filter: 'blur(55px)' }} />
+              <div style={{ position: 'absolute', width: 650, height: 650, borderRadius: '50%', bottom: '-10%', right: '-8%', background: 'radial-gradient(circle, rgba(100,180,120,0.50) 0%, transparent 65%)', filter: 'blur(55px)' }} />
+              <div style={{ position: 'absolute', width: 550, height: 550, borderRadius: '50%', top: '25%', right: '15%', background: 'radial-gradient(circle, rgba(220,170,100,0.45) 0%, transparent 65%)', filter: 'blur(55px)' }} />
+              <div style={{ position: 'absolute', width: 450, height: 450, borderRadius: '50%', bottom: '15%', left: '10%', background: 'radial-gradient(circle, rgba(100,160,210,0.40) 0%, transparent 65%)', filter: 'blur(55px)' }} />
+              <div style={{ position: 'absolute', width: 350, height: 350, borderRadius: '50%', top: '50%', left: '40%', background: 'radial-gradient(circle, rgba(200,100,160,0.35) 0%, transparent 65%)', filter: 'blur(45px)' }} />
+            </div>
+
+            {/* Falling particles: roses, hearts, petals — 55 particles */}
+            {Array.from({ length: 55 }).map((_, i) => {
+              const left = (i * 100 / 54);
+              const dur = 3.5 + (i % 7) * 0.6;
+              const delay = (i * 0.18) % 5.5;
+              const size = 13 + (i % 6) * 5;
+              const symbols = ['🌹','🌸','💗','🩷','🌺','💞','🌸','🌹','💕','🌷','🌼','💐','🩷','🌸','💗'];
+              return (
+                <motion.span key={i}
+                  initial={{ y: -60, opacity: 1, rotate: 0 }}
+                  animate={{ y: '115vh', opacity: [1, 1, 0.6, 0], rotate: (i % 2 === 0 ? 1 : -1) * 30 }}
+                  transition={{ duration: dur, delay, repeat: Infinity, ease: 'linear' }}
+                  style={{ position: 'absolute', left: `${left}%`, top: 0, fontSize: size, pointerEvents: 'none', userSelect: 'none' }}
+                >
+                  {symbols[i % symbols.length]}
+                </motion.span>
+              );
+            })}
+
+            {/* Butterflies — 18, flying in waves */}
+            {Array.from({ length: 18 }).map((_, i) => {
+              const startY = 3 + (i * 94 / 17);
+              const dur = 5 + (i % 5) * 1.0;
+              const delay = i * 0.45;
+              const size = 20 + (i % 4) * 8;
+              const fromRight = i % 3 === 0;
+              return (
+                <motion.span key={`bf-${i}`}
+                  initial={{ x: fromRight ? '110vw' : '-10vw', y: `${startY}vh`, opacity: 0 }}
+                  animate={{
+                    x: fromRight
+                      ? ['110vw','75vw','45vw','15vw','-10vw']
+                      : ['-10vw','20vw','50vw','80vw','110vw'],
+                    y: [`${startY}vh`,`${startY-9}vh`,`${startY+6}vh`,`${startY-7}vh`,`${startY+4}vh`],
+                    opacity: [0, 1, 1, 1, 0],
+                  }}
+                  transition={{ duration: dur, delay, repeat: Infinity, ease: 'easeInOut', times: [0,0.25,0.5,0.75,1] }}
+                  style={{ position: 'absolute', fontSize: size, pointerEvents: 'none', userSelect: 'none' }}
+                >
+                  🦋
+                </motion.span>
+              );
+            })}
+
+            {/* Main calligraphy text */}
+            <motion.div
+              initial={{ scale: 0.4, opacity: 0, y: 30 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.4, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+              style={{ textAlign: 'center', zIndex: 1, position: 'relative' }}
+            >
+              <motion.p
+                animate={{ y: [0, -12, 0] }}
+                transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+                style={{
+                  fontSize: 'clamp(6rem, 20vw, 15rem)',
+                  fontFamily: "'Aref Ruqaa', serif",
+                  fontWeight: 700,
+                  color: '#b5445a',
+                  lineHeight: 1.1,
+                  userSelect: 'none',
+                  textShadow: '0 4px 30px rgba(200,80,110,0.30), 0 0 80px rgba(255,160,180,0.25)',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                يوه
+              </motion.p>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 0.65, y: 0 }}
+                transition={{ delay: 0.7 }}
+                style={{ color: '#b5607a', fontFamily: "'Aref Ruqaa', serif", fontSize: '1.1rem', marginTop: '0.5rem', userSelect: 'none', letterSpacing: '0.10em' }}
+              >
+                🌸 اضغط في أي مكان للإغلاق 🌸
+              </motion.p>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </>
   );

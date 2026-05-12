@@ -51,7 +51,7 @@ function StatChip({ label, value, color, isDark }: {
         {value}
       </span>
       <span className="text-[11px]"
-        style={{ color: isDark ? 'rgba(255,255,255,0.42)' : 'rgba(60,42,24,0.46)', fontFamily: 'Cairo, sans-serif' }}>
+        style={{ color: isDark ? 'rgba(255,255,255,0.42)' : 'rgba(60,42,24,0.75)', fontFamily: 'Cairo, sans-serif' }}>
         {label}
       </span>
     </motion.div>
@@ -88,7 +88,7 @@ function ActionCard({ card, isDark, onPopup }: {
       </div>
       <span style={{
         fontFamily: 'Cairo, sans-serif', fontSize: '0.83rem',
-        fontWeight: isDark ? 600 : 800,
+        fontWeight: 500,
         color: isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)',
       }}>
         {card.title}
@@ -103,9 +103,6 @@ function ActionCard({ card, isDark, onPopup }: {
 }
 
 // Reminder types
-const PRIORITY_COLOR: Record<string, string> = {
-  urgent: '#e05252', high: '#e09a52', normal: '#c9a84c', low: 'rgba(255,255,255,0.40)',
-};
 const TYPE_ICON: Record<string, React.ReactNode> = {
   pickup: <Package size={14} />,
   return: <RotateCcw size={14} />,
@@ -113,11 +110,11 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
   cleaning: <Sparkles size={14} />,
 };
 
-const REMINDER_TYPE_META: Record<string, { label: string; bg: string; color: string; icon: React.ReactNode }> = {
-  pickup:   { label: 'استلام', bg: 'rgba(96,165,250,0.16)',  color: '#60a5fa', icon: <Package size={11} /> },
-  return:   { label: 'إرجاع',  bg: 'rgba(34,211,238,0.15)',  color: '#22d3ee', icon: <RotateCcw size={11} /> },
-  payment:  { label: 'دفع',    bg: 'rgba(74,222,128,0.15)',  color: '#4ade80', icon: <Wallet size={11} /> },
-  cleaning: { label: 'تنظيف', bg: 'rgba(192,132,252,0.16)', color: '#c084fc', icon: <Sparkles size={11} /> },
+const REMINDER_TYPE_META: Record<string, { label: string; bg: string; color: string; lightBg: string; lightColor: string; icon: React.ReactNode }> = {
+  pickup:   { label: 'استلام', bg: 'rgba(96,165,250,0.16)',  color: '#60a5fa', lightBg: 'rgba(37,99,235,0.10)',   lightColor: '#1d4ed8', icon: <Package size={11} /> },
+  return:   { label: 'إرجاع',  bg: 'rgba(34,211,238,0.15)',  color: '#22d3ee', lightBg: 'rgba(8,145,178,0.10)',   lightColor: '#0891b2', icon: <RotateCcw size={11} /> },
+  payment:  { label: 'دفع',    bg: 'rgba(74,222,128,0.15)',  color: '#4ade80', lightBg: 'rgba(22,163,74,0.10)',   lightColor: '#15803d', icon: <Wallet size={11} /> },
+  cleaning: { label: 'تنظيف', bg: 'rgba(192,132,252,0.16)', color: '#c084fc', lightBg: 'rgba(124,58,237,0.10)',  lightColor: '#7c3aed', icon: <Sparkles size={11} /> },
 };
 
 type PayCurrency = 'SYP' | 'USD' | 'TRY';
@@ -163,20 +160,20 @@ type ActivityLabelKey =
   | 'system'
   | 'other';
 
-const ACTIVITY_LABEL_META: Record<ActivityLabelKey, { label: string; bg: string; color: string }> = {
-  sale:      { label: 'بيع',      bg: 'rgba(201,168,76,0.18)', color: '#c9a84c' },
-  rental:    { label: 'تأجير',    bg: 'rgba(96,165,250,0.16)', color: '#60a5fa' },
-  reservation:{ label: 'حجز',     bg: 'rgba(59,130,246,0.14)', color: '#60a5fa' },
-  return:    { label: 'إرجاع',    bg: 'rgba(34,211,238,0.15)', color: '#22d3ee' },
-  cleaning:  { label: 'تنظيف',    bg: 'rgba(192,132,252,0.16)', color: '#c084fc' },
-  expense:   { label: 'مصروف',    bg: 'rgba(248,113,113,0.14)', color: '#f87171' },
-  inventory: { label: 'فستان',    bg: 'rgba(251,191,36,0.14)', color: '#fbbf24' },
-  delivery:  { label: 'توريد',    bg: 'rgba(45,212,191,0.15)', color: '#2dd4bf' },
-  reminder:  { label: 'تذكير',    bg: 'rgba(251,146,60,0.15)', color: '#fb923c' },
-  payment:   { label: 'دفعة',     bg: 'rgba(74,222,128,0.15)', color: '#4ade80' },
-  user:      { label: 'مستخدم',   bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.62)' },
-  system:    { label: 'سيستم',    bg: 'rgba(148,163,184,0.14)', color: '#cbd5e1' },
-  other:     { label: 'أخرى',     bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.58)' },
+const ACTIVITY_LABEL_META: Record<ActivityLabelKey, { label: string; bg: string; color: string; lightBg: string; lightColor: string }> = {
+  sale:        { label: 'بيع',     bg: 'rgba(201,168,76,0.18)',  color: '#c9a84c', lightBg: 'rgba(143,110,40,0.12)',  lightColor: '#8f6e28' },
+  rental:      { label: 'تأجير',   bg: 'rgba(96,165,250,0.16)',  color: '#60a5fa', lightBg: 'rgba(37,99,235,0.10)',   lightColor: '#1d4ed8' },
+  reservation: { label: 'حجز',     bg: 'rgba(59,130,246,0.14)',  color: '#60a5fa', lightBg: 'rgba(37,99,235,0.10)',   lightColor: '#1d4ed8' },
+  return:      { label: 'إرجاع',   bg: 'rgba(34,211,238,0.15)',  color: '#22d3ee', lightBg: 'rgba(8,145,178,0.10)',   lightColor: '#0891b2' },
+  cleaning:    { label: 'تنظيف',   bg: 'rgba(192,132,252,0.16)', color: '#c084fc', lightBg: 'rgba(124,58,237,0.10)',  lightColor: '#7c3aed' },
+  expense:     { label: 'مصروف',   bg: 'rgba(248,113,113,0.14)', color: '#f87171', lightBg: 'rgba(220,38,38,0.10)',   lightColor: '#dc2626' },
+  inventory:   { label: 'فستان',   bg: 'rgba(251,191,36,0.14)',  color: '#fbbf24', lightBg: 'rgba(217,119,6,0.10)',   lightColor: '#b45309' },
+  delivery:    { label: 'توريد',   bg: 'rgba(45,212,191,0.15)',  color: '#2dd4bf', lightBg: 'rgba(13,148,136,0.10)',  lightColor: '#0d9488' },
+  reminder:    { label: 'تذكير',   bg: 'rgba(251,146,60,0.15)',  color: '#fb923c', lightBg: 'rgba(234,88,12,0.10)',   lightColor: '#c2410c' },
+  payment:     { label: 'دفعة',    bg: 'rgba(74,222,128,0.15)',  color: '#4ade80', lightBg: 'rgba(22,163,74,0.10)',   lightColor: '#15803d' },
+  user:        { label: 'مستخدم',  bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.62)', lightBg: 'rgba(60,42,24,0.07)', lightColor: 'rgba(60,42,24,0.75)' },
+  system:      { label: 'سيستم',   bg: 'rgba(148,163,184,0.14)', color: '#cbd5e1', lightBg: 'rgba(71,85,105,0.10)',   lightColor: '#475569' },
+  other:       { label: 'أخرى',    bg: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.58)', lightBg: 'rgba(60,42,24,0.07)', lightColor: 'rgba(60,42,24,0.75)' },
 };
 
 const ENTITY_META: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -391,15 +388,15 @@ function matchesSmartDateFilter(value: string, query: string) {
 }
 
 // Detail drawer
-function DetailRow({ label, value, color }: { label: string; value: React.ReactNode; color?: string }) {
+function DetailRow({ label, value, color, isDark }: { label: string; value: React.ReactNode; color?: string; isDark: boolean }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2"
-      style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-      <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.78rem', color: 'rgba(255,255,255,0.42)', flexShrink: 0 }}>
+      style={{ borderBottom: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(60,42,24,0.08)' }}>
+      <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.78rem', color: isDark ? 'rgba(255,255,255,0.42)' : 'rgba(60,42,24,0.75)', flexShrink: 0 }}>
         {label}
       </span>
-      <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem', fontWeight: 600,
-        color: color ?? 'rgba(255,255,255,0.88)', textAlign: 'end' }}>
+      <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem', fontWeight: 500,
+        color: color ?? (isDark ? 'rgba(255,255,255,0.88)' : 'rgba(40,28,14,0.88)'), textAlign: 'end' }}>
         {value}
       </span>
     </div>
@@ -458,7 +455,7 @@ function DetailPanel({ title, onClose, children, isDark }: {
 
 // Page
 export function Homepage() {
-  const { theme, language, addToast, remindersRefreshKey, bumpReminders, exchangeRates } = useUIStore();
+  const { theme, language, addToast, remindersRefreshKey, bumpReminders } = useUIStore();
   const { user } = useAuthStore();
   const isOwner = user?.role === 'owner';
   const isDark = theme === 'dark';
@@ -639,21 +636,21 @@ export function Homepage() {
 
   const CARDS: CardDef[] = [
     { title: 'بيع فستان',    icon: <ShoppingBag size={22} />, action: 'popup', popupKey: 'sale',
-      accent: isDark ? 'rgba(201,168,76,0.22)' : 'rgba(201,168,76,0.16)' },
+      accent: isDark ? 'rgba(201,168,76,0.22)' : 'rgba(201,168,76,0.32)' },
     { title: 'تأجير فستان',  icon: <Calendar size={22} />,    action: 'popup', popupKey: 'rental',
-      accent: isDark ? 'rgba(99,179,237,0.20)' : 'rgba(99,179,237,0.15)' },
+      accent: isDark ? 'rgba(99,179,237,0.20)' : 'rgba(59,130,246,0.22)' },
     { title: 'المرتجعات',    icon: <RotateCcw size={22} />,   action: 'link',  to: '/rentals',
-      accent: isDark ? 'rgba(110,200,120,0.20)' : 'rgba(110,200,120,0.15)' },
+      accent: isDark ? 'rgba(110,200,120,0.20)' : 'rgba(22,163,74,0.20)' },
     { title: 'التنظيف',      icon: <Sparkles size={22} />,    action: 'link',  to: '/cleaning',
-      accent: isDark ? 'rgba(192,132,252,0.20)' : 'rgba(192,132,252,0.15)' },
+      accent: isDark ? 'rgba(192,132,252,0.20)' : 'rgba(139,92,246,0.20)' },
     { title: 'الفساتين',     icon: <DressIcon size={22} />,   action: 'link',  to: '/inventory',
-      accent: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.46)' },
+      accent: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(251,191,36,0.24)' },
     { title: 'العملاء',      icon: <Users size={22} />,       action: 'link',  to: '/customers',
-      accent: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.46)' },
+      accent: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(14,165,233,0.22)' },
     { title: 'المصروفات',    icon: <Wallet size={22} />,      action: 'link',  to: '/expenses',
-      accent: isDark ? 'rgba(239,68,68,0.18)' : 'rgba(239,68,68,0.12)' },
+      accent: isDark ? 'rgba(239,68,68,0.18)' : 'rgba(220,38,38,0.18)' },
     ...(isOwner ? [{ title: 'التوريدات', icon: <Truck size={22} />, action: 'link' as const, to: '/deliveries',
-      accent: isDark ? 'rgba(6,182,212,0.20)' : 'rgba(6,182,212,0.14)' }] : []),
+      accent: isDark ? 'rgba(6,182,212,0.20)' : 'rgba(6,182,212,0.22)' }] : []),
   ];
 
   const overdueCount = reminders.filter(r => isOverdue(r.date)).length;
@@ -718,12 +715,12 @@ export function Homepage() {
   }, [visibleLogs]);
 
   const textColor = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)';
-  const mutedColor = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
+  const mutedColor = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.75)';
 
   const chipStyle = (active: boolean): React.CSSProperties => ({
     fontFamily: 'Cairo, sans-serif',
     fontSize: '0.74rem',
-    fontWeight: isDark ? 600 : 700,
+    fontWeight: 500,
     padding: '4px 12px',
     borderRadius: 999,
     cursor: 'pointer',
@@ -759,12 +756,12 @@ export function Homepage() {
           className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin"
         >
           <StatChip label="إيجارات نشطة"   value={summary.active_rentals}    color={isDark ? '#5ab0e8' : '#3a88c0'} isDark={isDark} />
-          <StatChip label="إيرادات اليوم"  value={fmtUSD(summary.today_revenue)} color={isDark ? '#c9a84c' : '#a87830'} isDark={isDark} />
-          <StatChip label="مدفوعات معلقة" value={fmtUSD(summary.pending_payments)} color="#e05252" isDark={isDark} />
+          {isOwner && <StatChip label="إيرادات اليوم"  value={fmtUSD(summary.today_revenue)} color={isDark ? '#c9a84c' : '#a87830'} isDark={isDark} />}
+          {isOwner && <StatChip label="مدفوعات معلقة" value={fmtUSD(summary.pending_payments)} color="#e05252" isDark={isDark} />}
           <StatChip label="فساتين متاحة"  value={summary.available_dresses}  color={isDark ? '#4caf7a' : '#2e8c58'} isDark={isDark} />
-          <StatChip label="قيد التنظيف"   value={summary.cleaning_dresses}   color={isDark ? 'rgba(255,255,255,0.50)' : 'rgba(60,42,24,0.45)'} isDark={isDark} />
-          <StatChip label="تذكيرات"        value={summary.pending_reminders}  color={summary.pending_reminders > 0 ? '#e09a52' : (isDark ? 'rgba(255,255,255,0.50)' : 'rgba(60,42,24,0.45)')} isDark={isDark} />
-          <StatChip label="معاملات اليوم" value={summary.today_transactions} color={isDark ? 'rgba(255,255,255,0.50)' : 'rgba(60,42,24,0.45)'} isDark={isDark} />
+          <StatChip label="قيد التنظيف"   value={summary.cleaning_dresses}   color={isDark ? 'rgba(255,255,255,0.50)' : 'rgba(60,42,24,0.75)'} isDark={isDark} />
+          <StatChip label="تذكيرات"        value={summary.pending_reminders}  color={summary.pending_reminders > 0 ? '#e09a52' : (isDark ? 'rgba(255,255,255,0.50)' : 'rgba(60,42,24,0.75)')} isDark={isDark} />
+          <StatChip label="معاملات اليوم" value={summary.today_transactions} color={isDark ? 'rgba(255,255,255,0.50)' : 'rgba(60,42,24,0.75)'} isDark={isDark} />
         </motion.div>
       )}
 
@@ -831,11 +828,11 @@ export function Homepage() {
                 <button key={opt.key} onClick={() => setReminderTypeFilter(active && opt.key ? '' : opt.key)}
                   className="text-[11px] px-2.5 py-1 rounded-full transition-all"
                   style={{
-                    fontFamily: 'Cairo, sans-serif', fontWeight: 600,
-                    background: active ? (meta?.bg ?? 'rgba(201,168,76,0.18)') : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.40)'),
-                    color: active ? (meta?.color ?? '#c9a84c') : mutedColor,
+                    fontFamily: 'Cairo, sans-serif', fontWeight: 500,
+                    background: active ? (isDark ? (meta?.bg ?? 'rgba(201,168,76,0.18)') : (meta?.lightBg ?? 'rgba(201,168,76,0.12)')) : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.40)'),
+                    color: active ? (isDark ? (meta?.color ?? '#c9a84c') : (meta?.lightColor ?? '#8f6e28')) : mutedColor,
                     border: active
-                      ? `1px solid ${meta?.color ?? '#c9a84c'}55`
+                      ? `1px solid ${isDark ? (meta?.color ?? '#c9a84c') : (meta?.lightColor ?? '#8f6e28')}44`
                       : isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(60,42,24,0.10)',
                   }}>
                   {opt.label}
@@ -860,13 +857,13 @@ export function Homepage() {
                 <button key={opt.key} onClick={() => setReminderTimeFilter(active && opt.key ? '' : opt.key)}
                   className="text-[11px] px-2.5 py-1 rounded-full transition-all"
                   style={{
-                    fontFamily: 'Cairo, sans-serif', fontWeight: 600,
+                    fontFamily: 'Cairo, sans-serif', fontWeight: 500,
                     background: active
-                      ? (isOverdueChip ? 'rgba(224,82,82,0.16)' : 'rgba(201,168,76,0.18)')
+                      ? (isOverdueChip ? 'rgba(220,38,38,0.10)' : (isDark ? 'rgba(201,168,76,0.18)' : 'rgba(143,110,40,0.10)'))
                       : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.40)'),
-                    color: active ? (isOverdueChip ? '#e05252' : '#c9a84c') : mutedColor,
+                    color: active ? (isOverdueChip ? (isDark ? '#e05252' : '#b91c1c') : (isDark ? '#c9a84c' : '#8f6e28')) : mutedColor,
                     border: active
-                      ? (isOverdueChip ? '1px solid rgba(224,82,82,0.35)' : '1px solid rgba(201,168,76,0.40)')
+                      ? (isOverdueChip ? `1px solid ${isDark ? 'rgba(224,82,82,0.35)' : 'rgba(185,28,28,0.30)'}` : `1px solid ${isDark ? 'rgba(201,168,76,0.40)' : 'rgba(143,110,40,0.30)'}`)
                       : isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(60,42,24,0.10)',
                   }}>
                   {opt.label}
@@ -894,7 +891,7 @@ export function Homepage() {
         {/* List */}
         {filteredReminders.length === 0 ? (
           <div className="flex flex-col items-center py-8 gap-2"
-            style={{ color: isDark ? 'rgba(255,255,255,0.24)' : 'rgba(60,42,24,0.26)' }}>
+            style={{ color: isDark ? 'rgba(255,255,255,0.24)' : 'rgba(60,42,24,0.75)' }}>
             <CheckCircle size={28} className="opacity-40" />
             <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem' }}>
               {reminders.length === 0 ? 'لا توجد تذكيرات' : 'لا نتائج للفلتر الحالي'}
@@ -908,6 +905,8 @@ export function Homepage() {
                 label: r.reminder_type,
                 bg: 'rgba(255,255,255,0.08)',
                 color: 'rgba(255,255,255,0.55)',
+                lightBg: 'rgba(60,42,24,0.07)',
+                lightColor: 'rgba(60,42,24,0.75)',
                 icon: <Bell size={11} />,
               };
               return (
@@ -917,23 +916,23 @@ export function Homepage() {
                   className="flex items-center gap-2.5 px-3 py-2.5 rounded-[14px] cursor-pointer"
                   style={{
                     background: overdue
-                      ? (isDark ? 'rgba(224,82,82,0.07)' : 'rgba(224,82,82,0.04)')
+                      ? (isDark ? 'rgba(224,82,82,0.07)' : 'rgba(220,38,38,0.06)')
                       : (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.38)'),
-                    border: isDark
-                      ? `1px solid ${overdue ? 'rgba(224,82,82,0.18)' : 'rgba(255,255,255,0.06)'}`
-                      : '1px solid transparent',
+                    border: overdue
+                      ? (isDark ? '1px solid rgba(224,82,82,0.18)' : '1px solid rgba(185,28,28,0.22)')
+                      : (isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent'),
                   }}
                 >
                   {/* Type label pill */}
-                  <span className="flex-shrink-0 flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: typeMeta.bg, color: typeMeta.color, fontFamily: 'Cairo, sans-serif', whiteSpace: 'nowrap' }}>
+                  <span className="flex-shrink-0 flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+                    style={{ background: isDark ? typeMeta.bg : typeMeta.lightBg, color: isDark ? typeMeta.color : typeMeta.lightColor, fontFamily: 'Cairo, sans-serif', fontWeight: 500, whiteSpace: 'nowrap' }}>
                     {typeMeta.icon}
                     {typeMeta.label}
                   </span>
 
                   {/* Title + customer + dress */}
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-semibold"
+                    <p className="truncate text-sm font-medium"
                       style={{ color: isDark ? 'rgba(255,255,255,0.84)' : 'rgba(55,38,18,0.86)', fontFamily: 'Cairo, sans-serif' }}>
                       {r.title}
                     </p>
@@ -944,8 +943,8 @@ export function Homepage() {
                         </p>
                       )}
                       {r.dress_code && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md flex-shrink-0"
-                          style={{ background: 'rgba(201,168,76,0.14)', color: '#c9a84c' }}>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md flex-shrink-0"
+                          style={{ background: isDark ? 'rgba(201,168,76,0.14)' : 'rgba(143,110,40,0.10)', color: isDark ? '#c9a84c' : '#8f6e28', fontWeight: 500 }}>
                           {r.dress_code}
                         </span>
                       )}
@@ -967,12 +966,14 @@ export function Homepage() {
                     className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-110"
                     style={{
                       background: r.reminder_type === 'cleaning'
-                        ? 'rgba(192,132,252,0.13)'
-                        : 'rgba(74,222,128,0.13)',
-                      color: r.reminder_type === 'cleaning' ? '#c084fc' : '#4ade80',
+                        ? (isDark ? 'rgba(192,132,252,0.13)' : 'rgba(124,58,237,0.08)')
+                        : (isDark ? 'rgba(74,222,128,0.13)' : 'rgba(22,163,74,0.08)'),
+                      color: r.reminder_type === 'cleaning'
+                        ? (isDark ? '#c084fc' : '#7c3aed')
+                        : (isDark ? '#4ade80' : '#15803d'),
                       border: r.reminder_type === 'cleaning'
-                        ? '1px solid rgba(192,132,252,0.28)'
-                        : '1px solid rgba(74,222,128,0.28)',
+                        ? (isDark ? '1px solid rgba(192,132,252,0.28)' : '1px solid rgba(124,58,237,0.22)')
+                        : (isDark ? '1px solid rgba(74,222,128,0.28)' : '1px solid rgba(22,163,74,0.22)'),
                     }}
                     title={r.reminder_type === 'payment' ? 'تسوية الدفع' : r.reminder_type === 'cleaning' ? 'إتمام التنظيف' : 'إنهاء التذكير'}
                   >
@@ -1081,7 +1082,7 @@ export function Homepage() {
           </div>
         ) : filteredLogs.length === 0 ? (
           <div className="flex flex-col items-center py-12 gap-2"
-            style={{ color: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(60,42,24,0.24)' }}>
+            style={{ color: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(60,42,24,0.75)' }}>
             <ClipboardList size={32} className="opacity-30" />
             <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem' }}>لا توجد نشاطات</p>
           </div>
@@ -1106,11 +1107,12 @@ export function Homepage() {
                     }}
                   >
                     {/* Activity label */}
-                    <span className="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full"
                       style={{
-                        background: activityLabel.bg,
-                        color: activityLabel.color,
+                        background: isDark ? activityLabel.bg : activityLabel.lightBg,
+                        color: isDark ? activityLabel.color : activityLabel.lightColor,
                         fontFamily: 'Cairo, sans-serif',
+                        fontWeight: 500,
                         minWidth: 40,
                         textAlign: 'center',
                       }}>
@@ -1167,12 +1169,12 @@ export function Homepage() {
             {typeMeta && (
               <div className="flex items-center gap-2 mb-3">
                 <span className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
-                  style={{ background: typeMeta.bg, color: typeMeta.color, fontFamily: 'Cairo, sans-serif' }}>
+                  style={{ background: isDark ? typeMeta.bg : typeMeta.lightBg, color: isDark ? typeMeta.color : typeMeta.lightColor, fontFamily: 'Cairo, sans-serif' }}>
                   {typeMeta.icon} {typeMeta.label}
                 </span>
                 {isOverdue(selectedReminder.date) && (
                   <span className="text-[11px] px-2 py-0.5 rounded-full"
-                    style={{ background: 'rgba(224,82,82,0.14)', color: '#e05252', fontFamily: 'Cairo, sans-serif' }}>
+                    style={{ background: isDark ? 'rgba(224,82,82,0.14)' : 'rgba(185,28,28,0.10)', color: isDark ? '#e05252' : '#b91c1c', fontFamily: 'Cairo, sans-serif', fontWeight: 500 }}>
                     متأخر
                   </span>
                 )}
@@ -1180,29 +1182,39 @@ export function Homepage() {
             )}
             {selectedReminder.description && (
               <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.83rem',
-                color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(60,42,24,0.65)', marginBottom: 12, lineHeight: 1.6 }}>
+                color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(60,42,24,0.75)', marginBottom: 12, lineHeight: 1.6 }}>
                 {selectedReminder.description}
               </p>
             )}
             <DetailRow label="التاريخ" value={formatDate(selectedReminder.date, language)}
-              color={isOverdue(selectedReminder.date) ? '#f87171' : undefined} />
+              color={isOverdue(selectedReminder.date) ? (isDark ? '#f87171' : '#b91c1c') : undefined} isDark={isDark} />
             {selectedReminder.customer_name && (
-              <DetailRow label="العميل" value={selectedReminder.customer_name} />
+              <DetailRow label="العميل" value={selectedReminder.customer_name} isDark={isDark} />
             )}
-            <DetailRow label="تاريخ الإنشاء" value={formatDateTime(selectedReminder.created_at, language)} />
+            <DetailRow label="تاريخ الإنشاء" value={formatDateTime(selectedReminder.created_at, language)} isDark={isDark} />
             <div className="flex gap-2 mt-4">
               {selectedReminder.reminder_type === 'payment' && selectedReminder.transaction_id && (
                 <button
                   onClick={() => { setSelectedReminder(null); handleCompleteButton(selectedReminder); }}
-                  className="flex-1 py-2 rounded-xl text-sm font-semibold"
-                  style={{ background: 'rgba(74,222,128,0.14)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)', fontFamily: 'Cairo, sans-serif' }}>
+                  className="flex-1 py-2 rounded-xl text-sm"
+                  style={{
+                    background: isDark ? 'rgba(74,222,128,0.14)' : 'rgba(22,163,74,0.10)',
+                    color: isDark ? '#4ade80' : '#15803d',
+                    border: isDark ? '1px solid rgba(74,222,128,0.25)' : '1px solid rgba(22,163,74,0.28)',
+                    fontFamily: 'Cairo, sans-serif', fontWeight: 500,
+                  }}>
                   تسوية الدفع
                 </button>
               )}
               <button
                 onClick={() => { const r = selectedReminder; setSelectedReminder(null); handleCompleteButton(r); }}
-                className="flex-1 py-2 rounded-xl text-sm font-semibold"
-                style={{ background: 'rgba(255,255,255,0.07)', color: mutedColor, border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(60,42,24,0.10)', fontFamily: 'Cairo, sans-serif' }}>
+                className="flex-1 py-2 rounded-xl text-sm"
+                style={{
+                  background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(60,42,24,0.06)',
+                  color: isDark ? 'rgba(255,255,255,0.62)' : 'rgba(60,42,24,0.72)',
+                  border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(60,42,24,0.15)',
+                  fontFamily: 'Cairo, sans-serif', fontWeight: 500,
+                }}>
                 {selectedReminder.reminder_type === 'return' ? 'تسجيل الإرجاع' : 'إنهاء التذكير'}
               </button>
             </div>
@@ -1221,7 +1233,7 @@ export function Homepage() {
           }
         >
           <div className="space-y-4" style={{ fontFamily: 'Cairo, sans-serif' }}>
-            <p style={{ color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(60,42,24,0.65)', fontSize: '0.88rem', lineHeight: 1.6 }}>
+            <p style={{ color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(60,42,24,0.75)', fontSize: '0.88rem', lineHeight: 1.6 }}>
               إرجاع الفستان
               {returningReminder.dress_code && (
                 <strong style={{ color: '#c9a84c' }}> {returningReminder.dress_code} </strong>
@@ -1263,7 +1275,7 @@ export function Homepage() {
           }
         >
           <div className="space-y-4" style={{ fontFamily: 'Cairo, sans-serif' }}>
-            <p style={{ color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(60,42,24,0.65)', fontSize: '0.88rem', lineHeight: 1.6 }}>
+            <p style={{ color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(60,42,24,0.75)', fontSize: '0.88rem', lineHeight: 1.6 }}>
               الانتهاء من تنظيف الفستان
               {cleaningReminder.dress_code && (
                 <strong style={{ color: '#c9a84c' }}> {cleaningReminder.dress_code} </strong>
@@ -1391,13 +1403,21 @@ export function Homepage() {
           'id','user_id','dress_id','transaction_id','customer_id',
           'customer_name','customer_phone','dress_code','code',
           'employee_name','cleaner_name','supplier',
-          'color','size','style','notes','currency','payment_method','status']);
+          'color','size','style','notes','currency','payment_method','status',
+          'category','date','reminder_type','title','priority','description']);
         const KEY_LABELS: Record<string, string> = {
           price: 'السعر', deposit: 'العربون', remaining: 'المتبقي',
           amount: 'المبلغ', total_cost: 'الكلفة الإجمالية',
           currency: 'العملة', payment_method: 'طريقة الدفع',
           rental_start: 'تاريخ الاستلام', rental_end: 'تاريخ الإرجاع',
           return_date: 'تاريخ الإرجاع الفعلي', status: 'الحالة',
+        };
+        const CATEGORY_AR: Record<string, string> = {
+          rent: 'إيجار', electricity: 'كهرباء', salary: 'رواتب',
+          cleaning: 'تنظيف', marketing: 'تسويق', maintenance: 'صيانة', other: 'أخرى',
+        };
+        const REMINDER_TYPE_AR: Record<string, string> = {
+          pickup: 'استلام', return: 'إرجاع', payment: 'دفع', cleaning: 'تنظيف',
         };
 
         const m = parsedMeta ?? {};
@@ -1415,7 +1435,7 @@ export function Homepage() {
 
         const lbl: React.CSSProperties = {
           fontFamily: 'Cairo, sans-serif', fontSize: '0.73rem', flexShrink: 0,
-          color: isDark ? 'rgba(255,255,255,0.36)' : 'rgba(60,42,24,0.38)',
+          color: isDark ? 'rgba(255,255,255,0.36)' : 'rgba(60,42,24,0.75)',
         };
         const val: React.CSSProperties = {
           fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem', fontWeight: 600, textAlign: 'end',
@@ -1446,7 +1466,7 @@ export function Homepage() {
                 <span style={{
                   fontFamily: 'Cairo, sans-serif', fontSize: '0.75rem',
                   display: 'flex', alignItems: 'center', gap: 4,
-                  color: isDark ? 'rgba(255,255,255,0.42)' : 'rgba(60,42,24,0.42)',
+                  color: isDark ? 'rgba(255,255,255,0.42)' : 'rgba(60,42,24,0.75)',
                 }}>
                   {entity.icon} {entity.label}
                 </span>
@@ -1473,6 +1493,20 @@ export function Homepage() {
                 </Row>
               )}
               {get('status') && <Row label="الحالة">{get('status')}</Row>}
+              {/* Category (expenses) */}
+              {get('category') && (
+                <Row label="الفئة">{CATEGORY_AR[get('category')!] ?? get('category')}</Row>
+              )}
+              {/* Reminder type */}
+              {get('reminder_type') && (
+                <Row label="نوع التذكير">{REMINDER_TYPE_AR[get('reminder_type')!] ?? get('reminder_type')}</Row>
+              )}
+              {/* Reminder / expense date */}
+              {get('date') && (
+                <Row label="التاريخ">
+                  <span style={{ fontFamily: 'monospace' }}>{get('date')!.slice(0, 10)}</span>
+                </Row>
+              )}
               {/* Financial */}
               {[...PRICE_KEYS].map(k => get(k) ? (
                 <Row key={k} label={KEY_LABELS[k]}>
@@ -1491,13 +1525,13 @@ export function Homepage() {
               {extraEntries.map(([k, v]) => (
                 <Row key={k} label={k}>{String(v)}</Row>
               ))}
-              {/* Notes */}
-              {get('notes') && (
+              {/* Notes / description */}
+              {(get('notes') || get('description')) && (
                 <div style={{ marginTop: 8, padding: '7px 0' }}>
-                  <p style={{ ...lbl, marginBottom: 4 }}>ملاحظات</p>
+                  <p style={{ ...lbl, marginBottom: 4 }}>الملاحظات</p>
                   <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem', lineHeight: 1.55,
-                    color: isDark ? 'rgba(255,255,255,0.68)' : 'rgba(55,38,18,0.68)', margin: 0 }}>
-                    {get('notes')}
+                    color: isDark ? 'rgba(255,255,255,0.68)' : 'rgba(55,38,18,0.75)', margin: 0 }}>
+                    {get('notes') ?? get('description')}
                   </p>
                 </div>
               )}
@@ -1506,7 +1540,7 @@ export function Homepage() {
                 <div style={{ marginTop: 4, padding: '7px 0' }}>
                   <p style={{ ...lbl, marginBottom: 4 }}>التفاصيل</p>
                   <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.82rem', lineHeight: 1.55,
-                    color: isDark ? 'rgba(255,255,255,0.68)' : 'rgba(55,38,18,0.68)', margin: 0 }}>
+                    color: isDark ? 'rgba(255,255,255,0.68)' : 'rgba(55,38,18,0.75)', margin: 0 }}>
                     {selectedLog.description}
                   </p>
                 </div>

@@ -1,5 +1,6 @@
-﻿import { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import { cn } from '../utils/cn';
+import { useUIStore } from '../store/uiStore';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'gold';
@@ -9,40 +10,62 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', loading, icon, children, className, disabled, ...props }, ref) => {
+  ({ variant = 'primary', size = 'md', loading, icon, children, className, disabled, style, ...props }, ref) => {
+    const { theme } = useUIStore();
+    const isDark = theme === 'dark';
+
     const base = 'inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-transparent disabled:opacity-40 disabled:cursor-not-allowed active:scale-95';
 
-    const variants = {
-      primary:   'bg-gradient-to-r from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 text-white focus:ring-gold-400',
-      secondary: 'border border-white/15 text-white/70 hover:text-white hover:border-white/25 backdrop-blur-xl focus:ring-white/20',
-      ghost:     'text-white/60 hover:text-white hover:bg-white/8 focus:ring-white/20',
+    const variantClass: Record<string, string> = {
+      primary:   'text-white focus:ring-gold-400',
+      secondary: '',
+      ghost:     '',
       danger:    'bg-red-500/80 hover:bg-red-500 text-white border border-red-400/30 focus:ring-red-400',
-      gold:      'bg-gradient-to-r from-gold-400 to-gold-600 hover:from-gold-500 hover:to-gold-700 text-white focus:ring-gold-400',
+      gold:      'text-white focus:ring-gold-400',
     };
 
-    const variantStyle: Record<string, React.CSSProperties> = {
-      primary: {
-        boxShadow: '0 12px 28px rgba(208,162,90,0.09), inset 0 1px 0 rgba(255,255,255,0.17)',
-      },
-      gold: {
-        boxShadow: '0 12px 28px rgba(208,162,90,0.10), inset 0 1px 0 rgba(255,255,255,0.18)',
-      },
-      secondary: {
-        background: 'rgba(255,255,255,0.48)',
-        borderColor: 'rgba(255,255,255,0.84)',
-        boxShadow: '0 12px 28px rgba(160,160,160,0.04), 0 0 8px rgba(255,255,255,0.11), inset 0 1px 0 rgba(255,255,255,0.96)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-      },
-      ghost: {
-        background: 'rgba(255,255,255,0.34)',
-        boxShadow: '0 10px 22px rgba(160,160,160,0.03), inset 0 1px 0 rgba(255,255,255,0.94)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-      },
-      danger: {
-        boxShadow: '0 12px 28px rgba(239,68,68,0.07), inset 0 1px 0 rgba(255,255,255,0.12)',
-      },
+    const variantStyle = (): React.CSSProperties => {
+      switch (variant) {
+        case 'primary':
+        case 'gold':
+          return isDark ? {
+            background: 'rgba(201,168,76,0.80)',
+            border: '1px solid rgba(201,168,76,0.40)',
+          } : {
+            background: 'rgba(143,110,40,0.85)',
+            border: '1px solid rgba(143,110,40,0.35)',
+          };
+        case 'secondary':
+          return isDark ? {
+            background: 'rgba(255,255,255,0.08)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            color: 'rgba(255,255,255,0.75)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          } : {
+            background: 'rgba(255,255,255,0.60)',
+            border: '1px solid rgba(60,42,24,0.16)',
+            color: 'rgba(55,38,18,0.82)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          };
+        case 'ghost':
+          return isDark ? {
+            background: 'rgba(255,255,255,0.06)',
+            color: 'rgba(255,255,255,0.65)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          } : {
+            background: 'rgba(255,255,255,0.50)',
+            color: 'rgba(55,38,18,0.75)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          };
+        case 'danger':
+          return {};
+        default:
+          return {};
+      }
     };
 
     const sizes = {
@@ -54,8 +77,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={cn(base, variants[variant], sizes[size], className)}
-        style={variantStyle[variant]}
+        className={cn(base, variantClass[variant], sizes[size], className)}
+        style={{ ...variantStyle(), ...style }}
         disabled={disabled || loading}
         {...props}
       >
@@ -70,4 +93,3 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   }
 );
 Button.displayName = 'Button';
-

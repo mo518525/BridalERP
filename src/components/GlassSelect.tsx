@@ -118,7 +118,7 @@ export function GlassSelect({
     borderRadius: 12,
     color: selected
       ? (isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)')
-      : (isDark ? 'rgba(255,255,255,0.30)' : 'rgba(60,42,24,0.35)'),
+      : (isDark ? 'rgba(255,255,255,0.30)' : 'rgba(60,42,24,0.55)'),
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.55 : 1,
     transition: 'border-color 0.15s',
@@ -151,7 +151,7 @@ export function GlassSelect({
       {label && (
         <label style={{
           fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif',
-          color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)',
+          color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)',
         }}>
           {label}
           {required && <span style={{ color: '#f87171', marginInlineStart: 4 }}>*</span>}

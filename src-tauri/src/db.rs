@@ -55,6 +55,21 @@ pub fn init_db(path: &Path) -> Result<Connection> {
     ");
     let _ = conn.execute_batch("CREATE INDEX IF NOT EXISTS idx_employee_todos_user ON employee_todos(user_id);");
 
+    // Recurring expense automation columns
+    let _ = conn.execute_batch("ALTER TABLE expenses ADD COLUMN is_template INTEGER NOT NULL DEFAULT 0;");
+    let _ = conn.execute_batch("ALTER TABLE expenses ADD COLUMN next_due_date TEXT;");
+    // Mark existing recurring expenses as templates and set their next due date from today
+    let _ = conn.execute_batch("
+        UPDATE expenses SET
+            is_template = 1,
+            next_due_date = CASE
+                WHEN recurring_type = 'monthly' THEN date('now', '+1 month')
+                WHEN recurring_type = 'weekly'  THEN date('now', '+7 days')
+                ELSE NULL
+            END
+        WHERE recurring_type != 'none' AND is_template = 0 AND next_due_date IS NULL;
+    ");
+
     // Backfill: resolve user_name from users table for existing log entries that have user_id but no user_name
     let _ = conn.execute_batch(
         "UPDATE activity_log

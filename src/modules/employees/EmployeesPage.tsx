@@ -34,11 +34,19 @@ const ROLE_OPTIONS = [
   { value: 'cashier', label: 'كاشير' },
 ];
 const ROLE_MAP: Record<string, string> = { owner: 'مالك', employee: 'موظف', cashier: 'كاشير' };
-const ROLE_COLOR: Record<string, { bg: string; text: string }> = {
+const ROLE_COLOR_DARK: Record<string, { bg: string; text: string }> = {
   owner:    { bg: 'rgba(201,168,76,0.18)',  text: '#c9a84c' },
   employee: { bg: 'rgba(100,160,220,0.18)', text: '#60a4dc' },
   cashier:  { bg: 'rgba(120,180,120,0.18)', text: '#6aad6a' },
 };
+const ROLE_COLOR_LIGHT: Record<string, { bg: string; text: string }> = {
+  owner:    { bg: 'rgba(201,168,76,0.18)',  text: '#c9a84c' },
+  employee: { bg: 'rgba(100,160,220,0.18)', text: '#1d6fa8' },
+  cashier:  { bg: 'rgba(120,180,120,0.18)', text: '#1e6e35' },
+};
+function getRoleColor(role: string, isDark: boolean) {
+  return (isDark ? ROLE_COLOR_DARK : ROLE_COLOR_LIGHT)[role] ?? (isDark ? ROLE_COLOR_DARK : ROLE_COLOR_LIGHT).employee;
+}
 
 function Avatar({ name, size = 44 }: { name: string; size?: number }) {
   const initials = name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
@@ -165,7 +173,7 @@ function EmployeeDetail({ emp, txns, reminders, isDark, onClose, onEdit, onDelet
   const revenue = myTxns.reduce((s, tx) => s + tx.price, 0);
   const myReminders = reminders.filter(r => r.status === 'pending');
   const overdue = myReminders.filter(r => isOverdue(r.date)).length;
-  const rc = ROLE_COLOR[emp.role] ?? ROLE_COLOR.employee;
+  const rc = getRoleColor(emp.role, isDark);
 
   return (
     <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 24 }}
@@ -228,7 +236,7 @@ function EmployeeDetail({ emp, txns, reminders, isDark, onClose, onEdit, onDelet
         {myTxns.slice(0, 12).map(tx => (
           <div key={tx.id} className="flex items-center gap-2.5 rounded-[12px] px-3 py-2.5"
             style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.55)', border: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(255,255,255,0.80)' }}>
-            <span style={{ color: tx.transaction_type === 'rental' ? '#c9a84c' : '#6aad6a' }}>
+            <span style={{ color: tx.transaction_type === 'rental' ? '#c9a84c' : (isDark ? '#6aad6a' : '#1e6e35') }}>
               {tx.transaction_type === 'rental' ? <RotateCcw size={13} /> : <ShoppingBag size={13} />}
             </span>
             <div className="flex-1 min-w-0">
@@ -331,7 +339,7 @@ function OwnerView() {
           {employees.map((emp, i) => {
             const myTxns = txns.filter(tx => tx.employee_id === emp.id);
             const revenue = myTxns.reduce((s, tx) => s + tx.price, 0);
-            const rc = ROLE_COLOR[emp.role] ?? ROLE_COLOR.employee;
+            const rc = getRoleColor(emp.role, isDark);
             const isSelected = selected?.id === emp.id;
             return (
               <motion.div key={emp.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
@@ -361,8 +369,8 @@ function OwnerView() {
                       <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: '0.95rem', color: t.text2, marginLeft: 3 }}>${revenue.toFixed(0)}</span>
                     </span>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[0.60rem] font-semibold ${emp.active ? 'text-emerald-300' : 'text-white/30'}`}
-                    style={{ background: emp.active ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.06)', border: emp.active ? '1px solid rgba(16,185,129,0.25)' : '1px solid rgba(255,255,255,0.10)', fontFamily: 'Cairo, sans-serif' }}>
+                  <span className="px-2 py-0.5 rounded-full text-[0.60rem] font-semibold"
+                    style={{ color: emp.active ? (isDark ? '#4ade80' : '#15803d') : (isDark ? 'rgba(255,255,255,0.30)' : 'rgba(60,42,24,0.45)'), background: emp.active ? 'rgba(16,185,129,0.12)' : isDark ? 'rgba(255,255,255,0.06)' : 'rgba(60,42,24,0.06)', border: emp.active ? '1px solid rgba(16,185,129,0.25)' : isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(60,42,24,0.10)', fontFamily: 'Cairo, sans-serif' }}>
                     {emp.active ? 'نشط' : 'غير نشط'}
                   </span>
                 </div>
@@ -519,7 +527,7 @@ function EmployeeView() {
   const pending = reminders.filter(r => r.status === 'pending');
   const overdueCount = pending.filter(r => isOverdue(r.date)).length;
   const revenue = txns.reduce((s, tx) => s + tx.price, 0);
-  const rc = ROLE_COLOR[me?.role ?? 'employee'];
+  const rc = getRoleColor(me?.role ?? 'employee', isDark);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="space-y-4">
@@ -566,7 +574,7 @@ function EmployeeView() {
                 <motion.div key={tx.id} whileHover={{ x: 2 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   className="flex items-center gap-3 rounded-[14px] px-4 py-3"
                   style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.55)', border: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(255,255,255,0.80)' }}>
-                  <span style={{ color: tx.transaction_type === 'rental' ? '#c9a84c' : '#6aad6a' }}>
+                  <span style={{ color: tx.transaction_type === 'rental' ? '#c9a84c' : (isDark ? '#6aad6a' : '#1e6e35') }}>
                     {tx.transaction_type === 'rental' ? <RotateCcw size={15} /> : <ShoppingBag size={15} />}
                   </span>
                   <div className="flex-1 min-w-0">
@@ -577,7 +585,7 @@ function EmployeeView() {
                   </div>
                   <div className="text-end">
                     <p style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: '0.90rem', color: t.gold }}>${tx.price.toFixed(0)}</p>
-                    <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.62rem', color: tx.status === 'active' ? '#60a4dc' : tx.status === 'completed' ? '#6aad6a' : t.textFaint }}>
+                    <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.62rem', color: tx.status === 'active' ? (isDark ? '#60a4dc' : '#1d6fa8') : tx.status === 'completed' ? (isDark ? '#6aad6a' : '#1e6e35') : t.textFaint }}>
                       {tx.status === 'active' ? 'نشط' : tx.status === 'completed' ? 'مكتمل' : 'ملغي'}
                     </p>
                   </div>

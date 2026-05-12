@@ -9,9 +9,9 @@ import { GlassDatePicker } from '../../components/GlassDatePicker';
 import { formatDate } from '../../utils/formatters';
 import type { Dress } from '../../types';
 
-const STATUS_META: Record<string, { label: string; desc: string; color: string; bg: string }> = {
-  cleaning: { label: 'قيد التنظيف', desc: 'الفستان في التنظيف حالياً', color: '#c084fc', bg: 'rgba(192,132,252,0.12)' },
-  done:     { label: 'جاهز',        desc: 'اضغط لتحويل الفستان إلى متاح',  color: '#4ade80', bg: 'rgba(74,222,128,0.12)' },
+const STATUS_META_BASE: Record<string, { label: string; desc: string; darkColor: string; lightColor: string; bg: string }> = {
+  cleaning: { label: 'قيد التنظيف', desc: 'الفستان في التنظيف حالياً', darkColor: '#c084fc', lightColor: '#7c3aed', bg: 'rgba(192,132,252,0.12)' },
+  done:     { label: 'جاهز',        desc: 'اضغط لتحويل الفستان إلى متاح',  darkColor: '#4ade80', lightColor: '#15803d', bg: 'rgba(74,222,128,0.12)' },
 };
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
@@ -70,8 +70,9 @@ export function CleaningList() {
     return result;
   }, [dresses, search, dateFrom, dateTo]);
 
-  const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.40)';
+  const textMuted = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(60,42,24,0.75)';
   const textMain  = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)';
+  const STATUS_META = Object.fromEntries(Object.entries(STATUS_META_BASE).map(([k, v]) => [k, { ...v, color: isDark ? v.darkColor : v.lightColor }]));
 
   const inputStyle: React.CSSProperties = {
     fontFamily: 'Cairo, sans-serif',
@@ -97,7 +98,7 @@ export function CleaningList() {
           style={{
             fontFamily: 'Cairo, sans-serif',
             background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(60,42,24,0.06)',
-            color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.55)',
+            color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)',
             border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(60,42,24,0.10)',
           }}>
           <ArrowRight size={15} />
@@ -148,7 +149,7 @@ export function CleaningList() {
         {(search || dateFrom || dateTo) && (
           <button onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); }}
             className="px-3 py-1.5 rounded-xl text-xs"
-            style={{ fontFamily: 'Cairo, sans-serif', color: '#f87171',
+            style={{ fontFamily: 'Cairo, sans-serif', color: isDark ? '#f87171' : '#dc2626',
               background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.20)' }}>
             مسح
           </button>
@@ -202,7 +203,7 @@ export function CleaningList() {
                     {/* Cleaner */}
                     <div>
                       <p className="text-xs mb-0.5" style={{ color: textMuted, fontFamily: 'Cairo, sans-serif' }}>المنظِّف</p>
-                      <p className="text-xs font-semibold" style={{ color: dress.cleaner_name ? '#c084fc' : textMuted, fontFamily: 'Cairo, sans-serif' }}>
+                      <p className="text-xs font-semibold" style={{ color: dress.cleaner_name ? (isDark ? '#c084fc' : '#7c3aed') : textMuted, fontFamily: 'Cairo, sans-serif' }}>
                         {dress.cleaner_name || '—'}
                       </p>
                     </div>
@@ -227,7 +228,7 @@ export function CleaningList() {
                         style={{
                           fontFamily: 'Cairo, sans-serif',
                           background: 'rgba(74,222,128,0.12)',
-                          color: '#4ade80',
+                          color: isDark ? '#4ade80' : '#15803d',
                           border: '1px solid rgba(74,222,128,0.25)',
                           opacity: markingId === dress.id ? 0.5 : 1,
                           cursor: markingId === dress.id ? 'not-allowed' : 'pointer',

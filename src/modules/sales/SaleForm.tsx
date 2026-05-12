@@ -5,6 +5,7 @@ import { Search, X, Check, ChevronDown } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useUIStore } from '../../store/uiStore';
 import { useAuthStore } from '../../store/authStore';
+import { usePermissions } from '../../hooks/usePermissions';
 import { Modal } from '../../components/Modal';
 import { Button } from '../../components/Button';
 import { Input, TextArea } from '../../components/Input';
@@ -70,7 +71,7 @@ function CurrencyPicker({ value, onChange, isDark }: {
               : isDark ? 'rgba(255,255,255,0.06)' : 'rgba(60,42,24,0.06)',
             color: value === c
               ? '#c9a84c'
-              : isDark ? 'rgba(255,255,255,0.45)' : 'rgba(60,42,24,0.45)',
+              : isDark ? 'rgba(255,255,255,0.45)' : 'rgba(60,42,24,0.75)',
             border: value === c
               ? '1px solid rgba(201,168,76,0.40)'
               : isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(60,42,24,0.08)',
@@ -97,6 +98,7 @@ function DressCombobox({ dresses, loadError, value, onSelect, isDark, error }: {
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const { isEmployee } = usePermissions();
 
   const selected = dresses.find(d => d.id === value) ?? null;
 
@@ -181,7 +183,7 @@ function DressCombobox({ dresses, loadError, value, onSelect, isDark, error }: {
     return (
       <div className="flex flex-col gap-1.5">
         <label style={{ fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif',
-          color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)' }}>
+          color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)' }}>
           الفستان <span style={{ color: '#f87171' }}>*</span>
         </label>
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
@@ -192,12 +194,14 @@ function DressCombobox({ dresses, loadError, value, onSelect, isDark, error }: {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold" style={{ color: '#c9a84c', fontFamily: 'Cairo, sans-serif' }}>
               {selected.code}
-              {selected.color && <span style={{ fontWeight: 400, color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(60,42,24,0.55)' }}> · {selected.color}</span>}
-              {selected.size && <span style={{ fontWeight: 400, color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(60,42,24,0.55)' }}> · {selected.size}</span>}
+              {selected.color && <span style={{ fontWeight: 400, color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(60,42,24,0.75)' }}> · {selected.color}</span>}
+              {selected.size && <span style={{ fontWeight: 400, color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(60,42,24,0.75)' }}> · {selected.size}</span>}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: isDark ? 'rgba(255,255,255,0.40)' : 'rgba(60,42,24,0.40)', fontFamily: 'Cairo, sans-serif' }}>
-              السعر المرجعي: {formatNumber(selected.price)} ل.س
-            </p>
+            {!isEmployee && (
+              <p className="text-xs mt-0.5" style={{ color: isDark ? 'rgba(255,255,255,0.40)' : 'rgba(60,42,24,0.75)', fontFamily: 'Cairo, sans-serif' }}>
+                السعر المرجعي: {formatNumber(selected.price)} ل.س
+              </p>
+            )}
           </div>
           <button type="button" onClick={() => onSelect(null)}
             className="p-1 rounded-lg"
@@ -212,7 +216,7 @@ function DressCombobox({ dresses, loadError, value, onSelect, isDark, error }: {
   return (
     <div className="flex flex-col gap-1.5" ref={wrapRef}>
       <label style={{ fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif',
-        color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)' }}>
+        color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)' }}>
         الفستان <span style={{ color: '#f87171' }}>*</span>
       </label>
       <div className="relative">
@@ -248,12 +252,12 @@ function DressCombobox({ dresses, loadError, value, onSelect, isDark, error }: {
                 </div>
               ) : dresses.length === 0 ? (
                 <div className="px-3 py-4 text-center text-sm"
-                  style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(60,42,24,0.35)', fontFamily: 'Cairo, sans-serif' }}>
+                  style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(60,42,24,0.75)', fontFamily: 'Cairo, sans-serif' }}>
                   لا توجد فساتين متاحة — أضف فساتين من قسم المخزون
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="px-3 py-4 text-center text-sm"
-                  style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(60,42,24,0.35)', fontFamily: 'Cairo, sans-serif' }}>
+                  style={{ color: isDark ? 'rgba(255,255,255,0.30)' : 'rgba(60,42,24,0.75)', fontFamily: 'Cairo, sans-serif' }}>
                   لا توجد نتائج لـ "{query}"
                 </div>
               ) : filtered.map(d => (
@@ -270,6 +274,7 @@ function DressCombobox({ dresses, loadError, value, onSelect, isDark, error }: {
 
 function DressRow({ dress, isDark, onSelect }: { dress: Dress; isDark: boolean; onSelect: () => void }) {
   const [hover, setHover] = useState(false);
+  const { isEmployee } = usePermissions();
   return (
     <button
       type="button"
@@ -284,14 +289,16 @@ function DressRow({ dress, isDark, onSelect }: { dress: Dress; isDark: boolean; 
     >
       <div className="flex-1 min-w-0">
         <span className="font-bold" style={{ color: '#c9a84c' }}>{dress.code}</span>
-        {dress.color && <span style={{ color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)' }}> · {dress.color}</span>}
-        {dress.size && <span style={{ color: isDark ? 'rgba(255,255,255,0.50)' : 'rgba(60,42,24,0.50)' }}> · {dress.size}</span>}
-        {dress.style && <span style={{ color: isDark ? 'rgba(255,255,255,0.40)' : 'rgba(60,42,24,0.40)', fontSize: '0.75rem' }}> · {dress.style}</span>}
+        {dress.color && <span style={{ color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)' }}> · {dress.color}</span>}
+        {dress.size && <span style={{ color: isDark ? 'rgba(255,255,255,0.50)' : 'rgba(60,42,24,0.75)' }}> · {dress.size}</span>}
+        {dress.style && <span style={{ color: isDark ? 'rgba(255,255,255,0.40)' : 'rgba(60,42,24,0.75)', fontSize: '0.75rem' }}> · {dress.style}</span>}
       </div>
-      <span className="flex-shrink-0 text-xs font-semibold"
-        style={{ color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(60,42,24,0.55)' }}>
-        {formatNumber(dress.price)} ل.س
-      </span>
+      {!isEmployee && (
+        <span className="flex-shrink-0 text-xs font-semibold"
+          style={{ color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(60,42,24,0.75)' }}>
+          {formatNumber(dress.price)} ل.س
+        </span>
+      )}
     </button>
   );
 }
@@ -415,7 +422,7 @@ export function SaleForm({ open, onClose, onSaved }: Props) {
   };
 
   const textColor = isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)';
-  const mutedColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(60,42,24,0.45)';
+  const mutedColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(60,42,24,0.75)';
 
   return (
     <Modal open={open} onClose={onClose} isDirty={hasContent} title="بيع فستان" size="lg"
@@ -458,7 +465,7 @@ export function SaleForm({ open, onClose, onSaved }: Props) {
 
         {/* Price + currency */}
         <div className="flex flex-col gap-1.5">
-          <label style={{ fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif', color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)' }}>
+          <label style={{ fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif', color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)' }}>
             السعر <span style={{ color: '#f87171' }}>*</span>
           </label>
           <div className="flex gap-2">
@@ -493,7 +500,7 @@ export function SaleForm({ open, onClose, onSaved }: Props) {
 
         {/* Deposit + currency */}
         <div className="flex flex-col gap-1.5">
-          <label style={{ fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif', color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)' }}>
+          <label style={{ fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif', color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)' }}>
             العربون
           </label>
           <div className="flex gap-2">
@@ -535,7 +542,7 @@ export function SaleForm({ open, onClose, onSaved }: Props) {
           />
           <div className="flex flex-col gap-1.5">
             <label style={{ fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Cairo, sans-serif',
-              color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.60)' }}>
+              color: isDark ? 'rgba(255,255,255,0.60)' : 'rgba(60,42,24,0.75)' }}>
               المتبقي
             </label>
             <div className="flex gap-2 items-center">

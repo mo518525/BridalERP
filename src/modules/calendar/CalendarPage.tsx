@@ -29,22 +29,38 @@ function glassPanel(isDark: boolean, extra?: React.CSSProperties): React.CSSProp
   };
 }
 
-type DisplayType = 'rental_start' | 'rental_end' | 'payment' | 'cleaning' | 'delivery';
+type DisplayType = 'rental_start' | 'rental_end' | 'payment' | 'cleaning' | 'delivery' | 'reminder';
 
-const EVENT_COLORS: Record<DisplayType, { bg: string; text: string; icon: React.ReactNode; label: string }> = {
-  rental_start: { bg: 'rgba(201,168,76,0.18)',  text: '#c9a84c', icon: <CalendarDays size={10} />, label: 'تأجير' },
-  rental_end:   { bg: 'rgba(120,180,120,0.18)', text: '#6aad6a', icon: <RotateCcw size={10} />,   label: 'إرجاع' },
-  payment:      { bg: 'rgba(180,120,200,0.18)', text: '#b07ac8', icon: <Wallet size={10} />,       label: 'دفعة' },
-  cleaning:     { bg: 'rgba(100,160,220,0.18)', text: '#60a4dc', icon: <Sparkles size={10} />,    label: 'تنظيف' },
-  delivery:     { bg: 'rgba(240,160,80,0.18)',  text: '#e09a52', icon: <Truck size={10} />,        label: 'توصيل' },
+const EVENT_COLORS_BASE: Record<DisplayType, { bg: string; lightBg: string; darkText: string; lightText: string; icon: React.ReactNode; label: string }> = {
+  rental_start: { bg: 'rgba(201,168,76,0.18)',  lightBg: 'rgba(143,110,40,0.13)',  darkText: '#c9a84c', lightText: '#8f6e28', icon: <CalendarDays size={10} />, label: 'تأجير' },
+  rental_end:   { bg: 'rgba(120,180,120,0.18)', lightBg: 'rgba(30,110,53,0.11)',   darkText: '#6aad6a', lightText: '#1e6e35', icon: <RotateCcw size={10} />,   label: 'إرجاع' },
+  payment:      { bg: 'rgba(180,120,200,0.18)', lightBg: 'rgba(124,58,237,0.11)',  darkText: '#b07ac8', lightText: '#7c3aed', icon: <Wallet size={10} />,       label: 'دفعة' },
+  cleaning:     { bg: 'rgba(100,160,220,0.18)', lightBg: 'rgba(29,111,168,0.11)',  darkText: '#60a4dc', lightText: '#1d6fa8', icon: <Sparkles size={10} />,    label: 'تنظيف' },
+  delivery:     { bg: 'rgba(240,160,80,0.18)',  lightBg: 'rgba(194,65,12,0.10)',   darkText: '#e09a52', lightText: '#c2410c', icon: <Truck size={10} />,        label: 'توصيل' },
+  reminder:     { bg: 'rgba(255,120,120,0.18)', lightBg: 'rgba(220,38,38,0.10)',   darkText: '#e07070', lightText: '#dc2626', icon: <AlertTriangle size={10} />, label: 'موعد' },
 };
 
 function resolveType(raw: string): DisplayType {
-  if (raw in EVENT_COLORS) return raw as DisplayType;
-  if (raw === 'return') return 'rental_end';
-  if (raw === 'rental') return 'rental_start';
-  if (raw === 'pickup') return 'rental_start';
-  return 'cleaning';
+  if (raw in EVENT_COLORS_BASE) return raw as DisplayType;
+  if (raw === 'return')  return 'rental_end';
+  if (raw === 'rental')  return 'rental_start';
+  if (raw === 'pickup')  return 'rental_start';
+  if (raw === 'payment') return 'payment';
+  if (raw === 'cleaning') return 'cleaning';
+  return 'reminder';
+}
+
+type CellEvent =
+  | { kind: 'cal'; data: CalendarEvent }
+  | { kind: 'reminder'; data: Reminder };
+
+const CUSTOM_REMINDER_TYPES_KEY = 'reminder_custom_types';
+function loadCustomReminderTypes(): string[] {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_REMINDER_TYPES_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveCustomReminderTypes(types: string[]) {
+  localStorage.setItem(CUSTOM_REMINDER_TYPES_KEY, JSON.stringify(types));
 }
 
 const DAYS_AR   = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
@@ -54,17 +70,18 @@ const PRIORITY_OPTIONS = [
   { value: 'low', label: 'منخفض' }, { value: 'normal', label: 'عادي' },
   { value: 'high', label: 'مرتفع' }, { value: 'urgent', label: 'عاجل' },
 ];
-const TYPE_OPTIONS = [
+const PREDEFINED_TYPE_OPTIONS = [
   { value: 'pickup', label: 'استلام' }, { value: 'return', label: 'إرجاع' },
   { value: 'payment', label: 'دفع' }, { value: 'cleaning', label: 'تنظيف' },
 ];
-const PRIORITY_COLOR: Record<string, string> = {
-  urgent: '#e05252', high: '#e09a52', normal: '#c9a84c', low: 'rgba(150,150,150,0.7)',
-};
+const PREDEFINED_TYPE_VALUES = new Set(PREDEFINED_TYPE_OPTIONS.map(o => o.value));
 
 function AddReminderForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const { addToast } = useUIStore();
-  const [form, setForm] = useState({ reminder_type: 'pickup', title: '', description: '', date: todayISO(), priority: 'normal' });
+  const { addToast, theme } = useUIStore();
+  const isDark = theme === 'dark';
+  const [form, setForm] = useState({ reminder_type: 'pickup', title: '', description: '', date: todayISO() });
+  const [customType, setCustomType] = useState('');
+  const [customTypes, setCustomTypes] = useState<string[]>(loadCustomReminderTypes);
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const set = (k: string, v: string) => { setForm(f => ({ ...f, [k]: v })); setIsDirty(true); };
@@ -72,24 +89,53 @@ function AddReminderForm({ onClose, onSaved }: { onClose: () => void; onSaved: (
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return;
+    const finalType = form.reminder_type === 'other' ? customType.trim() : form.reminder_type;
+    if (!finalType) return;
+
+    if (form.reminder_type === 'other' && finalType && !customTypes.includes(finalType) && !PREDEFINED_TYPE_VALUES.has(finalType)) {
+      const updated = [...customTypes, finalType];
+      setCustomTypes(updated);
+      saveCustomReminderTypes(updated);
+    }
+
     setLoading(true);
     try {
-      await api.reminders.create({ reminder_type: form.reminder_type, title: form.title,
-        description: form.description || undefined, date: form.date, priority: form.priority });
+      await api.reminders.create({ reminder_type: finalType, title: form.title,
+        description: form.description || undefined, date: form.date, priority: 'normal' });
       addToast('success', 'تم إضافة التذكير');
       onSaved();
     } catch (err) { addToast('error', String(err)); }
     finally { setLoading(false); }
   };
 
+  const typeOptions = [
+    ...PREDEFINED_TYPE_OPTIONS,
+    ...customTypes.map(c => ({ value: c, label: c })),
+    { value: 'other', label: 'أخرى (مخصص)…' },
+  ];
+
   return (
     <Modal open onClose={onClose} isDirty={isDirty} title="إضافة تذكير" size="md"
       footer={<><Button variant="ghost" onClick={onClose}>إلغاء</Button><Button variant="gold" form="rem-form" type="submit" loading={loading}>حفظ</Button></>}>
       <form id="rem-form" onSubmit={handleSubmit} className="space-y-4">
         <Input label="العنوان" value={form.title} onChange={e => set('title', e.target.value)} required />
-        <div className="grid grid-cols-2 gap-4">
-          <Select label="النوع" value={form.reminder_type} onChange={e => set('reminder_type', e.target.value)} options={TYPE_OPTIONS} />
-          <Select label="الأولوية" value={form.priority} onChange={e => set('priority', e.target.value)} options={PRIORITY_OPTIONS} />
+        <div className="flex flex-col gap-1.5">
+          <Select label="النوع" value={form.reminder_type} onChange={e => set('reminder_type', e.target.value)} options={typeOptions} />
+          {form.reminder_type === 'other' && (
+            <input
+              autoFocus
+              placeholder="اكتب نوع الموعد…"
+              value={customType}
+              onChange={e => { setCustomType(e.target.value); setIsDirty(true); }}
+              className="h-10 px-3 text-sm rounded-xl outline-none"
+              style={{
+                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.60)',
+                border: isDark ? '1px solid rgba(201,168,76,0.35)' : '1px solid rgba(201,168,76,0.40)',
+                color: isDark ? 'rgba(255,255,255,0.88)' : 'rgba(55,38,18,0.90)',
+                fontFamily: 'Cairo, sans-serif',
+              }}
+            />
+          )}
         </div>
         <GlassDatePicker label="التاريخ" value={form.date} onChange={v => set('date', v)} required />
         <TextArea label="الوصف" value={form.description} onChange={e => set('description', e.target.value)} rows={2} />
@@ -103,6 +149,10 @@ export function CalendarPage() {
   const { canDelete } = usePermissions();
   const isDark = theme === 'dark';
   const t = tok(isDark);
+  const EVENT_COLORS = Object.fromEntries(Object.entries(EVENT_COLORS_BASE).map(([k, v]) => {
+    const text = isDark ? v.darkText : v.lightText;
+    return [k, { ...v, text, activeBg: isDark ? v.bg : v.lightBg, iconBg: `${text}30` }];
+  })) as Record<DisplayType, { bg: string; lightBg: string; activeBg: string; iconBg: string; darkText: string; lightText: string; text: string; icon: React.ReactNode; label: string }>;
 
   const today = new Date();
   const [year, setYear]   = useState(today.getFullYear());
@@ -134,11 +184,11 @@ export function CalendarPage() {
   const prevMonth = () => { if (month === 0) { setMonth(11); setYear(y => y-1); } else setMonth(m => m-1); setSelected(null); };
   const nextMonth = () => { if (month === 11) { setMonth(0); setYear(y => y+1); } else setMonth(m => m+1); setSelected(null); };
 
-  const eventsForDay = (day: number) =>
-    calEvents.filter(ev => {
-      const d = new Date(ev.date);
-      return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
-    });
+  // calEvents already includes reminders (get_calendar_events queries reminders table too)
+  const eventsForDay = (day: number): CalendarEvent[] => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return calEvents.filter(ev => ev.date.startsWith(dateStr));
+  };
 
   const isToday = (day: number) =>
     day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
@@ -177,7 +227,7 @@ export function CalendarPage() {
         <div className="flex items-center gap-3 flex-wrap">
           {(Object.entries(EVENT_COLORS) as [DisplayType, typeof EVENT_COLORS[DisplayType]][]).map(([type, c]) => (
             <div key={type} className="flex items-center gap-1.5">
-              <span className="flex h-4 w-4 items-center justify-center rounded-full" style={{ background: c.bg, color: c.text }}>{c.icon}</span>
+              <span className="flex h-4 w-4 items-center justify-center rounded-full" style={{ background: c.iconBg, color: c.text }}>{c.icon}</span>
               <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.70rem', color: t.textMuted }}>{c.label}</span>
             </div>
           ))}
@@ -237,13 +287,13 @@ export function CalendarPage() {
             >
               {cells.map((day, idx) => {
                 if (day === null) return <div key={`e-${idx}`} />;
-                const events = eventsForDay(day);
+                const dayEvs = eventsForDay(day);
                 const active  = selected === day;
                 const todayC  = isToday(day);
                 return (
                   <motion.button key={day} whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }}
                     onClick={() => setSelected(active ? null : day)}
-                    onDoubleClick={e => { e.stopPropagation(); if (events.length > 0) setDetailDay(day); }}
+                    onDoubleClick={e => { e.stopPropagation(); if (dayEvs.length > 0) setDetailDay(day); }}
                     className="relative flex flex-col items-center rounded-[14px] px-1 py-2"
                     style={{
                       minHeight: 60,
@@ -253,21 +303,22 @@ export function CalendarPage() {
                     <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '0.88rem', fontWeight: todayC || active ? 700 : 400, color: active ? t.gold : todayC ? t.text1 : t.text2 }}>
                       {day}
                     </span>
-                    {events.length > 0 && (
+                    {dayEvs.length > 0 && (
                       <div className="mt-1 flex flex-col items-center gap-0.5 w-full px-0.5">
-                        {events.slice(0, 2).map((ev, i) => {
+                        {dayEvs.slice(0, 2).map((ev, i) => {
                           const type = resolveType(ev.event_type);
                           const c = EVENT_COLORS[type];
+                          const label = type === 'reminder' ? ev.event_type : c.label;
                           return (
                             <span key={i} className="flex items-center gap-0.5 rounded-[5px] px-1 w-full justify-center"
-                              style={{ background: c.bg, color: c.text, fontSize: '0.58rem', fontFamily: 'Cairo, sans-serif', lineHeight: '1.5' }}>
+                              style={{ background: c.activeBg, color: c.text, fontSize: '0.58rem', fontFamily: 'Cairo, sans-serif', lineHeight: '1.5' }}>
                               {c.icon}
-                              <span className="truncate max-w-[36px]">{c.label}</span>
+                              <span className="truncate max-w-[36px]">{label}</span>
                             </span>
                           );
                         })}
-                        {events.length > 2 && (
-                          <span style={{ fontSize: '0.58rem', color: t.textMuted, fontFamily: 'Cairo, sans-serif' }}>+{events.length - 2}</span>
+                        {dayEvs.length > 2 && (
+                          <span style={{ fontSize: '0.58rem', color: t.textMuted, fontFamily: 'Cairo, sans-serif' }}>+{dayEvs.length - 2}</span>
                         )}
                       </div>
                     )}
@@ -348,7 +399,6 @@ export function CalendarPage() {
                             </p>
                           )}
                         </div>
-                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: PRIORITY_COLOR[r.priority] }} />
                         <div className="flex gap-0.5" onClick={e => e.stopPropagation()}>
                           <button onClick={() => markDone(r.id)} className="p-1 rounded-lg" style={{ color: '#4caf7a' }} title="تم">
                             <CheckCircle size={13} />
@@ -385,7 +435,7 @@ export function CalendarPage() {
                   return (
                     <motion.div key={i} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
                       className="rounded-[14px] px-3 py-2.5 space-y-1"
-                      style={{ background: c.bg, border: `1px solid ${c.text}28` }}>
+                      style={{ background: c.activeBg, border: `1px solid ${c.text}28` }}>
                       <div className="flex items-center gap-2">
                         <span style={{ color: c.text }}>{c.icon}</span>
                         <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.78rem', fontWeight: 600, color: t.text1 }}>{ev.title}</span>
@@ -416,9 +466,9 @@ export function CalendarPage() {
                       <motion.button key={type} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}
                         onClick={() => setSummaryType(type)}
                         className="flex items-center justify-between w-full rounded-[10px] px-2 py-1.5"
-                        style={{ background: summaryType === type ? c.bg : 'transparent', border: `1px solid ${summaryType === type ? c.text + '30' : 'transparent'}` }}>
+                        style={{ background: summaryType === type ? c.activeBg : 'transparent', border: `1px solid ${summaryType === type ? c.text + '30' : 'transparent'}` }}>
                         <div className="flex items-center gap-2">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: c.bg, color: c.text }}>{c.icon}</span>
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: c.iconBg, color: c.text }}>{c.icon}</span>
                           <span style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.74rem', color: t.text2 }}>{c.label}</span>
                         </div>
                         <span style={{ fontFamily: "'Playfair Display', serif", fontSize: '0.88rem', fontWeight: 700, color: c.text }}>{count}</span>
@@ -437,7 +487,7 @@ export function CalendarPage() {
         </motion.div>
       </div>
 
-      {showAddForm && <AddReminderForm onClose={() => setShowAddForm(false)} onSaved={() => { setShowAddForm(false); loadReminders(); }} />}
+      {showAddForm && <AddReminderForm onClose={() => setShowAddForm(false)} onSaved={() => { setShowAddForm(false); loadReminders(); loadCalEvents(year, month); }} />}
 
       {/* Day detail popup (double-click) */}
       <AnimatePresence>
@@ -450,7 +500,9 @@ export function CalendarPage() {
               transition={{ type: 'spring', stiffness: 420, damping: 32 }}
               onClick={e => e.stopPropagation()}
               className="rounded-[22px] p-5 w-full space-y-3 overflow-y-auto"
-              style={glassPanel(isDark, { maxWidth: 400, maxHeight: '80vh' })}>
+              style={isDark
+                ? glassPanel(isDark, { maxWidth: 400, maxHeight: '80vh' })
+                : { ...glassPanel(isDark, { maxWidth: 400, maxHeight: '80vh' }), background: 'rgba(255,255,255,0.94)' }}>
               <div className="flex items-center justify-between">
                 <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: '1.05rem', fontWeight: 700, color: t.text1 }}>
                   {detailDay} {MONTHS_AR[month]} {year}
@@ -463,13 +515,17 @@ export function CalendarPage() {
               {eventsForDay(detailDay).map((ev, i) => {
                 const type = resolveType(ev.event_type);
                 const c = EVENT_COLORS[type];
+                const typeLabel = type === 'reminder' ? ev.event_type : c.label;
                 return (
                   <div key={i} className="rounded-[14px] px-4 py-3 space-y-2"
-                    style={{ background: c.bg, border: `1px solid ${c.text}28` }}>
+                    style={{ background: c.activeBg, border: `1px solid ${c.text}28` }}>
                     <div className="flex items-center gap-2">
                       <span className="flex h-6 w-6 items-center justify-center rounded-full flex-shrink-0"
-                        style={{ background: `${c.text}22`, color: c.text }}>{c.icon}</span>
-                      <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.84rem', fontWeight: 700, color: t.text1 }}>{ev.title}</p>
+                        style={{ background: c.iconBg, color: c.text }}>{c.icon}</span>
+                      <div>
+                        <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.84rem', fontWeight: 700, color: t.text1 }}>{ev.title}</p>
+                        <p style={{ fontFamily: 'Cairo, sans-serif', fontSize: '0.68rem', color: c.text }}>{typeLabel}</p>
+                      </div>
                     </div>
                     <div className="space-y-1 pr-8">
                       {ev.customer_name && (
@@ -480,6 +536,11 @@ export function CalendarPage() {
                       {ev.dress_code && (
                         <p className="flex items-center gap-1.5 text-[0.74rem]" style={{ color: t.text2, fontFamily: 'Cairo, sans-serif' }}>
                           <Tag size={11} style={{ color: c.text }} /> {ev.dress_code}
+                        </p>
+                      )}
+                      {ev.description && (
+                        <p className="flex items-start gap-1.5 text-[0.74rem]" style={{ color: t.text2, fontFamily: 'Cairo, sans-serif' }}>
+                          <FileText size={11} style={{ color: c.text, marginTop: 2, flexShrink: 0 }} /> {ev.description}
                         </p>
                       )}
                     </div>
@@ -497,7 +558,6 @@ export function CalendarPage() {
           const r = detailReminder;
           const overdue = isOverdue(r.date);
           const typeLabel: Record<string, string> = { pickup: 'استلام', return: 'إرجاع', payment: 'دفع', cleaning: 'تنظيف' };
-          const prioLabel: Record<string, string> = { urgent: 'عاجل', high: 'مرتفع', normal: 'عادي', low: 'منخفض' };
           return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -534,13 +594,11 @@ export function CalendarPage() {
                       </div>
                     </div>
                   ))}
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="text-[0.70rem] px-2 py-0.5 rounded-full" style={{ fontFamily: 'Cairo, sans-serif', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', color: t.textMuted }}>
-                      الأولوية: {prioLabel[r.priority]}
-                    </span>
-                    <span className="w-2 h-2 rounded-full" style={{ background: PRIORITY_COLOR[r.priority] }} />
-                    {overdue && <span className="text-[0.70rem] px-2 py-0.5 rounded-full" style={{ fontFamily: 'Cairo, sans-serif', background: 'rgba(224,82,82,0.14)', color: '#e05252' }}>متأخر</span>}
-                  </div>
+                  {overdue && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-[0.70rem] px-2 py-0.5 rounded-full" style={{ fontFamily: 'Cairo, sans-serif', background: 'rgba(224,82,82,0.14)', color: '#e05252' }}>متأخر</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2 pt-1">
                   <Button variant="gold" onClick={() => { markDone(r.id); setDetailReminder(null); }}>تم</Button>
